@@ -1,4 +1,4 @@
-package designsystem
+package demo
 
 import (
 	"net/http"
@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	designsystem "github.com/jobrunner/fieldworksdiary-designsystem"
 )
 
 // klassenRe findet die Klassennamen, die base.css definiert.
@@ -80,7 +82,7 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 	// Welche Klassen base.css anbietet, steht in base.css — nicht in einer
 	// Liste hier, die beim nächsten Zuwachs vergessen würde.
 	angeboten := map[string]bool{}
-	for _, zeile := range strings.Split(string(BaseCSS()), "\n") {
+	for _, zeile := range strings.Split(string(designsystem.BaseCSS()), "\n") {
 		if m := klassenRe.FindStringSubmatch(strings.TrimSpace(zeile)); m != nil {
 			angeboten[m[1]] = true
 		}
@@ -90,7 +92,7 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 		delete(angeboten, nur)
 	}
 
-	demo := string(demoHTML)
+	demo := string(indexHTML)
 	benutzt := benutzteKlassen(demo)
 	for klasse := range angeboten {
 		if !benutzt[klasse] {
@@ -99,8 +101,8 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 	}
 }
 
-func TestDemoHandlerLiefertSeiteUndCSS(t *testing.T) {
-	srv := httptest.NewServer(DemoHandler())
+func TestHandlerLiefertSeiteUndCSS(t *testing.T) {
+	srv := httptest.NewServer(Handler())
 	defer srv.Close()
 
 	for _, f := range []struct {
