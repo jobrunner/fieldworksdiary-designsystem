@@ -132,6 +132,27 @@ textarea {
   min-height: 10rem;
 }
 
+/* tokens.css begründet --text-disabled ausführlich damit, dass ein
+   gesperrtes Bedienelement durch aria-disabled, Fläche und Mauszeiger
+   kenntlich wird — nicht durch schwachen Kontrast. Diese Regel setzt das
+   für Eingabefelder tatsächlich um; ohne sie fällt ein gesperrtes Feld auf
+   die Browser-Vorgabe zurück (im dunklen Thema ein heller Kasten in
+   dunkler Umgebung). [aria-disabled="true"] ist mit :disabled
+   gleichgestellt: beide sagen dasselbe, nur eines davon per HTML-Attribut,
+   das auch bei einem <div role="textbox"> oder einem serverseitig
+   gerenderten Feld ohne natives disabled greift. */
+input:disabled,
+select:disabled,
+textarea:disabled,
+input[aria-disabled="true"],
+select[aria-disabled="true"],
+textarea[aria-disabled="true"] {
+  color: var(--text-disabled);
+  background: var(--bg);
+  border-color: var(--control-line);
+  cursor: not-allowed;
+}
+
 .checkbox-row {
   display: flex;
   align-items: center;
@@ -250,6 +271,11 @@ textarea {
   border-color: var(--error);
 }
 
+.badge-warning {
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
 /* --- Tabellen --- */
 
 /* Eine breite Tabelle rollt in ihrem eigenen Kasten; die Seite selbst darf
@@ -307,6 +333,18 @@ thead th {
 .error {
   color: var(--error);
   border: 1px solid var(--error);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* --warning ist definiert und geprüft, aber ohne diese Regel in keinem
+   Dienst nutzbar — jeder der fünf hätte sich sonst seine eigene
+   Warnungsbox erfunden, genau die Drift, die dieses Modul auflösen soll. */
+.warning {
+  color: var(--warning);
+  border: 1px solid var(--warning);
   border-radius: var(--radius);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;

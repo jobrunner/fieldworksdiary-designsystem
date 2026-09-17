@@ -45,6 +45,10 @@
           <input type="checkbox" id="d-check" checked />
           Ankreuzfeld in einer Zeile
         </label>
+        <div class="form-group">
+          <label for="d-locked">Gesperrtes Feld</label>
+          <input type="text" id="d-locked" value="Nicht änderbar" disabled aria-disabled="true" />
+        </div>
       </section>
 
       <section class="card">
@@ -61,6 +65,7 @@
           <span class="badge">neutral</span>
           <span class="badge badge-success">erfolgreich</span>
           <span class="badge badge-error">fehlgeschlagen</span>
+          <span class="badge badge-warning">unsicher</span>
         </p>
       </section>
 
@@ -94,6 +99,7 @@
       <section class="card">
         <h2 class="card-title">Zustände</h2>
         <p class="error" role="alert">Die Abfrage ist fehlgeschlagen.</p>
+        <p class="warning" role="status">Die Angabe konnte nicht geprüft werden.</p>
         <div class="loading active" role="status">
           <div class="spinner"></div>
           <p>Abfrage wird ausgeführt …</p>
