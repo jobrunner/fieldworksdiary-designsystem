@@ -89,26 +89,27 @@ heute inline in einem `<style>`-Block hält, kann `CSS()` auch dort einsetzen.
 
 ## Farb-Tokens
 
-Alle Werte sind gegen die **Kartenfläche** geprüft, nicht gegen den
-Seitenhintergrund — die Karte ist die strengere Bezugsfläche. Die Werte in
-`contrast_test.go` sind die verbindliche Quelle; die folgende Tabelle gibt sie
-wieder.
+Jeder Wert ist gegen **beide** Flächen geprüft — Seitenhintergrund und Karte.
+Welche der beiden die strengere ist, hängt vom Thema ab: im hellen Thema ist
+es `--bg`, im dunklen `--card`. `contrast_test.go` liest die Werte aus
+`css/tokens.css` und prüft beide Flächen; es ist die verbindliche Quelle, die
+folgenden Tabellen geben sie wieder.
 
 ### Hell
 
-| Token | Wert | Kontrast auf `#ffffff` | Anforderung |
-|---|---|---|---|
-| `--bg` | `#f8fafc` | — | Seitenhintergrund |
-| `--card` | `#ffffff` | — | Kartenfläche |
-| `--text` | `#1e293b` | 14.6:1 | ≥ 7:1 |
-| `--text-muted` | `#475569` | 7.6:1 | ≥ 7:1 |
-| `--accent` | `#1e40af` | 8.7:1 (weißer Text darauf) | ≥ 7:1 |
-| `--success` | `#166534` | 7.1:1 | ≥ 7:1 |
-| `--error` | `#991b1b` | 8.3:1 | ≥ 7:1 |
-| `--warning` | `#92400e` | 7.1:1 | ≥ 7:1 |
-| `--text-disabled` | `#475569` | 7.6:1 | ≥ 7:1 |
-| `--control-line` | `#767676` | 4.5:1 | ≥ 3:1 |
-| `--border` | `#e2e8f0` | dekorativ | ausgenommen |
+| Token | Wert | gegen `--bg` | gegen `--card` | Anforderung |
+|---|---|---|---|---|
+| `--bg` | `#f8fafc` | — | — | Seitenhintergrund |
+| `--card` | `#ffffff` | — | — | Kartenfläche |
+| `--text` | `#1e293b` | 13.98:1 | 14.63:1 | ≥ 7:1 |
+| `--text-muted` | `#475569` | 7.24:1 | 7.58:1 | ≥ 7:1 |
+| `--accent` | `#1e40af` | 8.72:1 (weißer Text darauf) | — | ≥ 7:1 |
+| `--success` | `#146330` | 7.02:1 | 7.35:1 | ≥ 7:1 |
+| `--error` | `#991b1b` | 7.94:1 | 8.31:1 | ≥ 7:1 |
+| `--warning` | `#93390e` | 7.09:1 | 7.41:1 | ≥ 7:1 |
+| `--text-disabled` | `#475569` | 7.24:1 | 7.58:1 | ≥ 7:1 |
+| `--control-line` | `#767676` | 4.34:1 | 4.54:1 | ≥ 3:1 |
+| `--border` | `#e2e8f0` | dekorativ | dekorativ | ausgenommen |
 
 `--text-disabled` stammt aus Tempus und fehlt Ortus — ein Beispiel für die
 Drift, die das gemeinsame Modul beendet. Es erhält denselben Wert wie
@@ -118,19 +119,19 @@ Cursor.
 
 ### Dunkel
 
-| Token | Wert | Kontrast auf `--card` | Anforderung |
-|---|---|---|---|
-| `--bg` | `#0f172a` | — | Seitenhintergrund |
-| `--card` | `#1e293b` | — | Kartenfläche |
-| `--text` | `#f1f5f9` | 13.4:1 | ≥ 7:1 |
-| `--text-muted` | `#b4c0ce` | 7.9:1 | ≥ 7:1 |
-| `--accent` | `#93c5fd` | 8.1:1 | ≥ 7:1 |
-| `--success` | `#86efac` | 10.4:1 | ≥ 7:1 |
-| `--error` | `#fca5a5` | 7.7:1 | ≥ 7:1 |
-| `--warning` | `#fcd34d` | 10.2:1 | ≥ 7:1 |
-| `--text-disabled` | `#b4c0ce` | 7.9:1 | ≥ 7:1 |
-| `--control-line` | `#8695a8` | 4.8:1 | ≥ 3:1 |
-| `--border` | `#334155` | dekorativ | ausgenommen |
+| Token | Wert | gegen `--card` | gegen `--bg` | Anforderung |
+|---|---|---|---|---|
+| `--bg` | `#0f172a` | — | — | Seitenhintergrund |
+| `--card` | `#1e293b` | — | — | Kartenfläche |
+| `--text` | `#f1f5f9` | 13.35:1 | 16.30:1 | ≥ 7:1 |
+| `--text-muted` | `#b4c0ce` | 7.92:1 | 9.67:1 | ≥ 7:1 |
+| `--accent` | `#93c5fd` | 8.11:1 | 9.90:1 | ≥ 7:1 |
+| `--success` | `#86efac` | 10.42:1 | 12.71:1 | ≥ 7:1 |
+| `--error` | `#fca5a5` | 7.71:1 | 9.41:1 | ≥ 7:1 |
+| `--warning` | `#fcd34d` | 10.15:1 | 12.38:1 | ≥ 7:1 |
+| `--text-disabled` | `#b4c0ce` | 7.92:1 | 9.67:1 | ≥ 7:1 |
+| `--control-line` | `#8695a8` | 4.79:1 | 5.85:1 | ≥ 3:1 |
+| `--border` | `#334155` | dekorativ | dekorativ | ausgenommen |
 
 Drei Konsequenzen sind erwähnenswert:
 
@@ -138,8 +139,16 @@ Drei Konsequenzen sind erwähnenswert:
 `#475569` (7.6:1). Das ist die sichtbarste Änderung im hellen Thema.
 
 **Das Primärblau wird satter.** `#2563eb` trägt weißen Text nur mit 5.2:1;
-`#1e40af` erreicht 8.7:1. Buttons und Links bleiben blau, wirken aber
+`#1e40af` erreicht 8.72:1. Buttons und Links bleiben blau, wirken aber
 kräftiger.
+
+**Grün und Orange mussten nachgezogen werden.** Ein erster Entwurf setzte
+`--success` auf `#166534` und `--warning` auf `#92400e`. Beide erreichen 7:1
+gegen die weiße Karte, verfehlen es aber gegen den Seitenhintergrund (6.81:1
+und 6.78:1) — ein Fall, den nur die Prüfung gegen beide Flächen findet. Die
+jetzigen Werte erfüllen beide. Nebenwirkung: `--warning` rückt im Farbton
+etwas näher an `--error` heran (19.4° Abstand statt 22.7°); stünden beide je
+unmittelbar nebeneinander, wäre das im Auge zu behalten.
 
 **Karten brauchen im Dunkeln einen Rand.** `--card: #1e293b` steht gegen
 `--bg: #0f172a` nur bei 1.22:1. Der `box-shadow`, der die Karte im hellen
