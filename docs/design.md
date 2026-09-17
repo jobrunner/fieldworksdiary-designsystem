@@ -173,7 +173,8 @@ Tempus bereits gemeinsam verwenden — sie haben sich bewährt und ihre
 - Zeilenhöhe `1.5`, Basisgröße `1rem`
 - `--radius: 8px`, kleinerer Radius `4px` für eingebettete Flächen
 - `--shadow: 0 1px 3px rgba(0,0,0,0.1)` (nur im hellen Thema wirksam)
-- Breakpoints bei `640px` und `1024px`, mobile-first
+- Ein Breakpoint bei `640px`, mobile-first; ein zweiter wird heute nicht
+  gebraucht und wird erst ergänzt, wenn ein Dienst ihn tatsächlich braucht
 
 ## Komponenten in `base.css`
 
