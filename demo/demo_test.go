@@ -78,6 +78,189 @@ func TestBenutzteKlassenExtrahiertNurAusClassAttributen(t *testing.T) {
 	}
 }
 
+// kommentarRe entfernt CSS-Kommentare vor der Auswertung, damit ein
+// Erklärtext wie "a { color }" in einer Begründung nicht als Regel
+// mitgezählt wird.
+var kommentarRe = regexp.MustCompile(`(?s)/\*.*?\*/`)
+
+// regelKopfRe findet die Selektorliste jeder Regel: alles bis zum
+// öffnenden "{". Das trifft auch auf @media- und @keyframes-Blöcke zu
+// (deren Kopf beginnt mit "@" und wird unten verworfen) sowie auf die
+// Regeln, die darin verschachtelt sind — die kommen als eigener Treffer.
+var regelKopfRe = regexp.MustCompile(`([^{}]+)\{`)
+
+// elementNameRe erkennt einen bloßen HTML-Elementnamen wie "a" oder
+// "input", nicht aber "*" oder ":focus-visible".
+var elementNameRe = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
+
+// tagRe findet öffnende HTML-Tags in einem HTML-Text.
+var tagRe = regexp.MustCompile(`<([a-zA-Z][a-zA-Z0-9]*)`)
+
+// keineKomponente führt Elemente, die base.css zwar per Element-Selektor
+// gestalten könnte, die aber keine für sich sichtbare Komponente sind —
+// sie umschließen die ganze Seite oder alles auf einmal und lassen sich
+// nicht wie ein Knopf oder ein Link isoliert beurteilen. Die Liste ist
+// bewusst benannt statt implizit, damit ihre Kürze als Absicht erkennbar
+// ist und nicht als vergessener Fall.
+var keineKomponente = map[string]bool{
+	"html": true,
+	"body": true,
+	"*":    true,
+}
+
+// entferneKeyframes schneidet @keyframes-Blöcke vollständig heraus, bevor
+// elementSelektoren läuft. Ohne das läse die Regelkopf-Suche das "to" in
+// "@keyframes spin { to { transform: … } }" als Element-Selektor "to" —
+// das gibt es in HTML nicht, die Prüfung dürfte es also nie verlangen.
+// Die Klammertiefe wird gezählt, weil @media auf dieselbe Art verschachtelt
+// ist und ein einfaches "bis zur nächsten schließenden Klammer" bei einem
+// verschachtelten Block zu früh abschneiden würde.
+func entferneKeyframes(css string) string {
+	for {
+		i := strings.Index(css, "@keyframes")
+		if i < 0 {
+			return css
+		}
+		open := strings.Index(css[i:], "{")
+		if open < 0 {
+			return css
+		}
+		start := i + open
+		tiefe := 0
+		ende := len(css)
+		for j := start; j < len(css); j++ {
+			switch css[j] {
+			case '{':
+				tiefe++
+			case '}':
+				tiefe--
+				if tiefe == 0 {
+					ende = j + 1
+					goto fertig
+				}
+			}
+		}
+	fertig:
+		css = css[:i] + css[ende:]
+	}
+}
+
+// elementSelektoren sammelt die Element-Selektoren, die ein CSS-Text
+// gestaltet — "a" aus "a { … }" ebenso wie aus "a:visited { … }" oder aus
+// "thead th { … }" (letztes Glied der Nachfolger-Kette). Klassen- (".x"),
+// ID- (#x) und reine Pseudo-Klassen-Selektoren (":focus-visible") liefern
+// keinen Treffer, weil sie kein HTML-Element benennen, sondern nur eine
+// Markierung oder einen Zustand.
+func elementSelektoren(css string) map[string]bool {
+	css = kommentarRe.ReplaceAllString(css, "")
+	css = entferneKeyframes(css)
+
+	gefunden := make(map[string]bool)
+	for _, m := range regelKopfRe.FindAllStringSubmatch(css, -1) {
+		kopf := strings.TrimSpace(m[1])
+		if kopf == "" || strings.HasPrefix(kopf, "@") {
+			continue
+		}
+		for _, selektor := range strings.Split(kopf, ",") {
+			teile := strings.Fields(strings.TrimSpace(selektor))
+			if len(teile) == 0 {
+				continue
+			}
+			letztes := teile[len(teile)-1]
+			// Am ersten Sonderzeichen abschneiden: "input:disabled" -> "input",
+			// "input[aria-disabled=…]" -> "input", ".checkbox-row" -> "".
+			ende := len(letztes)
+			for i, r := range letztes {
+				if r == ':' || r == '[' || r == '.' || r == '#' || r == '*' || r == '&' {
+					ende = i
+					break
+				}
+			}
+			name := letztes[:ende]
+			if elementNameRe.MatchString(name) {
+				gefunden[name] = true
+			}
+		}
+	}
+	return gefunden
+}
+
+// benutzteElemente extrahiert die Tags, die in einem HTML-Text tatsächlich
+// vorkommen — Gegenstück zu benutzteKlassen, nur für Elemente statt
+// Klassen.
+func benutzteElemente(html string) map[string]bool {
+	elemente := make(map[string]bool)
+	for _, m := range tagRe.FindAllStringSubmatch(html, -1) {
+		elemente[strings.ToLower(m[1])] = true
+	}
+	return elemente
+}
+
+func TestElementSelektorenErkenntFehlendesElement(t *testing.T) {
+	css := `
+/* Ohne eigene Regel greift die Browser-Vorgabe. */
+a {
+  color: red;
+}
+
+a:visited {
+  color: red;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.card {
+  padding: 1rem;
+}
+`
+	elemente := elementSelektoren(css)
+	if !elemente["a"] {
+		t.Error(`elementSelektoren hat "a" nicht gefunden`)
+	}
+	if elemente["to"] {
+		t.Error(`elementSelektoren hat den @keyframes-Schritt "to" fälschlich als Element gewertet`)
+	}
+	if elemente["card"] {
+		t.Error(`elementSelektoren hat die Klasse ".card" fälschlich als Element gewertet`)
+	}
+
+	ohneLink := `<div class="card"><p>Kein Verweis hier.</p></div>`
+	mitLink := `<div class="card"><p><a href="#x">Verweis</a></p></div>`
+
+	if benutzteElemente(ohneLink)["a"] {
+		t.Error(`benutzteElemente hat in HTML ohne <a> fälschlich "a" gemeldet`)
+	}
+	if !benutzteElemente(mitLink)["a"] {
+		t.Error(`benutzteElemente hat <a> in HTML mit einem Verweis nicht gefunden`)
+	}
+}
+
+// TestDemoZeigtJedesElement schließt die Lücke, die TestDemoZeigtJedeKomponente
+// lässt: jener Test leitet seine erwartete Liste aus Klassennamen ab und
+// übersieht deshalb Komponenten, die base.css über einen bloßen
+// Element-Selektor gestaltet — a, a:visited, table, th, td, input, select,
+// textarea, label. Bei den Formularelementen und der Tabelle blieb das
+// folgenlos, weil die Demo sie ohnehin zeigt; beim Link fiel es der
+// Schlussprüfung auf, weil er als einzige Komponente fehlte, die genau die
+// im Befund behobene Regel überhaupt sichtbar macht.
+func TestDemoZeigtJedesElement(t *testing.T) {
+	angeboten := elementSelektoren(string(designsystem.BaseCSS()))
+	for name := range keineKomponente {
+		delete(angeboten, name)
+	}
+
+	benutzt := benutzteElemente(string(indexHTML))
+	for element := range angeboten {
+		if !benutzt[element] {
+			t.Errorf("Die Demo-Seite zeigt kein <%s> — das Element wäre nirgends vor dem Einsatz zu sehen", element)
+		}
+	}
+}
+
 func TestDemoZeigtJedeKomponente(t *testing.T) {
 	// Welche Klassen base.css anbietet, steht in base.css — nicht in einer
 	// Liste hier, die beim nächsten Zuwachs vergessen würde.
