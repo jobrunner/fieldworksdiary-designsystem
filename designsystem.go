@@ -1,6 +1,9 @@
 package designsystem
 
-import _ "embed"
+import (
+	_ "embed"
+	"net/http"
+)
 
 //go:embed css/tokens.css
 var tokensCSS []byte
@@ -24,4 +27,29 @@ func CSS() []byte {
 	out = append(out, tokensCSS...)
 	out = append(out, '\n')
 	return append(out, baseCSS...)
+}
+
+//go:embed demo/index.html
+var demoHTML []byte
+
+// DemoHandler liefert die Referenzseite samt Stylesheet. Sie dient der
+// visuellen Abnahme des Systems und ist zugleich das kürzeste Beispiel,
+// wie ein Dienst das CSS einbindet:
+//
+//	go run ./cmd/demo   (oder im Test: httptest.NewServer(DemoHandler()))
+func DemoHandler() http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/designsystem.css", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css; charset=utf-8")
+		w.Write(CSS())
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(demoHTML)
+	})
+	return mux
 }

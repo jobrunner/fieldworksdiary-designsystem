@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design-System — Referenzseite</title>
+    <link rel="stylesheet" href="/designsystem.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Design-System</h1>
+      <p class="muted">
+        Jede Komponente in ihrem Normalzustand. Das Thema folgt der
+        Systemeinstellung — zum Prüfen des dunklen Themas dort umschalten.
+      </p>
+
+      <section class="card">
+        <h2 class="card-title">Knöpfe</h2>
+        <div class="btn-row">
+          <button type="button" class="btn">Abfragen</button>
+          <button type="button" class="btn btn-secondary">Leeren</button>
+          <button type="button" class="btn" disabled>Gesperrt</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Formular</h2>
+        <div class="form-group">
+          <label for="d-text">Beschriftung</label>
+          <input type="text" id="d-text" placeholder="Platzhaltertext" />
+        </div>
+        <div class="form-group">
+          <label for="d-select">Auswahl</label>
+          <select id="d-select">
+            <option>Erster Eintrag</option>
+            <option>Ein deutlich längerer zweiter Eintrag</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="d-area">Mehrzeilig</label>
+          <textarea id="d-area" placeholder="52.52, 13.405"></textarea>
+        </div>
+        <label class="checkbox-row" for="d-check">
+          <input type="checkbox" id="d-check" checked />
+          Ankreuzfeld in einer Zeile
+        </label>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Reiter</h2>
+        <div class="tabs" role="tablist" aria-label="Beispiel">
+          <button type="button" class="tab" role="tab" aria-selected="true">Erster</button>
+          <button type="button" class="tab" role="tab" aria-selected="false" tabindex="-1">Zweiter</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Marken</h2>
+        <p>
+          <span class="badge">neutral</span>
+          <span class="badge badge-success">erfolgreich</span>
+          <span class="badge badge-error">fehlgeschlagen</span>
+        </p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Tabelle</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Feld</th>
+                <th scope="col">Wert</th>
+                <th scope="col">Herkunft</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Country</th>
+                <td>Deutschland</td>
+                <td class="muted">abgeleitet</td>
+              </tr>
+              <tr>
+                <th scope="row">Altitude (m)</th>
+                <td>412</td>
+                <td class="muted">abgeleitet</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Zustände</h2>
+        <p class="error" role="alert">Die Abfrage ist fehlgeschlagen.</p>
+        <div class="loading active" role="status">
+          <div class="spinner"></div>
+          <p>Abfrage wird ausgeführt …</p>
+        </div>
+        <p class="muted">Gedämpfter Nebentext.</p>
+      </section>
+
+      <a class="skip-link" href="#ende">Sprunglink (nur bei Fokus sichtbar)</a>
+      <p class="sr-only">Dieser Satz ist nur für Screenreader da.</p>
+      <p id="ende" class="muted">Ende der Referenzseite.</p>
+    </div>
+  </body>
+</html>
