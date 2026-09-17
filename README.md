@@ -42,6 +42,21 @@ Testcode wiederholt.
 `base.css` darf keine Farbe im Klartext enthalten; auch das prüft der Test.
 Eine Farbe außerhalb von `tokens.css` stünde außerhalb der Kontrastprüfung.
 
+Geprüft wird außerdem jede Regel in `base.css`, die `color: var(--…)` UND
+`background`/`background-color: var(--…)` **im selben Block** setzt: die
+beiden Token müssen gegeneinander ebenfalls 7:1 erreichen — zwei einzeln
+geprüfte Token lassen sich sonst zu einem unlesbaren Paar kombinieren (etwa
+`color: var(--text-muted)` auf `background: var(--accent)`, 1.15:1). Diese
+Prüfung hat eine bewusste Grenze: sie sieht nur Paare, die *in derselben
+Regel* stehen. Eine Farbe, die eine Regel wie `.btn:hover` aus einer anderen
+Regel (`.btn`) erbt, weil sie dort nicht neu gesetzt wird, entgeht ihr — das
+verlangte den vollen CSS-Kaskadenalgorithmus, den diese einfache
+Textzerlegung nicht nachbildet. Mit anderen Worten: geprüft ist, dass jedes
+Token für sich gegen die Flächen besteht, und dass jede Regel, die Text- und
+Flächenfarbe gemeinsam benennt, zueinander passt — nicht, dass *jede* im CSS
+tatsächlich zustande kommende Kombination aus Kaskade und Vererbung
+zueinander passt.
+
 ## Referenzseite
 
     go run ./cmd/demo

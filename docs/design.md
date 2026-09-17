@@ -204,20 +204,50 @@ zum Standard.
 
 ## Prüfung im Design-System-Repo
 
-`contrast_test.go` berechnet die relative Leuchtdichte nach WCAG und prüft
-jedes Farbpaar:
+`contrast.go` berechnet die relative Leuchtdichte nach WCAG und das
+Kontrastverhältnis zweier Farben. `tokens_test.go` liest `css/tokens.css` ein
+und prüft:
 
-- Text-Tokens gegen `--card` und `--bg`, beide Themen, ≥ 7:1
+- jedes Token, das keiner ausdrücklichen Ausnahme unterliegt (Flächen, Linien,
+  Radien, Schrift, `--accent-hover`), gegen `--card` und `--bg`, in beiden
+  Themen, ≥ 7:1 — die Ausnahmeliste steht im Testcode, alles andere ergibt
+  sich aus der Datei selbst, ein neues Textfarb-Token wird also ohne
+  weiteres Zutun erfasst
 - `--control-line` gegen `--card` und `--bg`, beide Themen, ≥ 3:1
-- weißer Text auf `--accent` im hellen Thema, ≥ 7:1
+- die Knopfbeschriftung (`--card`) auf `--accent` und `--accent-hover`,
+  beide Themen, ≥ 7:1
+- dass `tokens.css` genau einen `@media`-Block enthält und dieser
+  `prefers-color-scheme: dark` lautet — die Zerlegung in helles und dunkles
+  Thema setzt das voraus
 
-Der Test liest die Werte aus `css/tokens.css`, nicht aus einer zweiten Liste
-im Testcode — sonst prüft er eine Kopie statt der Wahrheit. Ein Farbwert, der
-das Niveau unterschreitet, bricht den Build hier, nicht erst in fünf
-Anwendungen.
+`css_test.go` sucht Farbliterale außerhalb von `tokens.css` (Hex, `rgb()`/
+`hsl()`, moderne Funktionen wie `oklch()`/`color-mix()`, die vollständige
+CSS-Farbwortliste, prozentkodierte Hex-Werte in data-URIs) und stellt sicher,
+dass `base.css` nur Token nutzt, die `tokens.css` auch definiert.
+
+Was diese Tests **nicht** abdecken: dass eine tatsächliche Regel in
+`base.css` zwei einzeln geprüfte Token auch sinnvoll kombiniert. Zwei für
+sich genommen unauffällige Token können in einer neuen Regel zu einem
+unlesbaren Paar werden — nachgewiesen etwa `color: var(--text-muted)` auf
+`background: var(--accent)`, 1.15:1, während alle bis dahin genannten Tests
+grün bleiben. Ein eigener Test in `farbpaarung_test.go` deckt den
+naheliegendsten Fall davon ab: jede Regel, die `color: var(--…)` UND
+`background`/`background-color: var(--…)` **im selben Block** setzt, wird
+gegeneinander auf 7:1 geprüft. Die bewusste Grenze dieser Prüfung: sie
+kombiniert keine Farben über mehrere Regeln hinweg — eine Farbe, die (wie
+`.btn:hover`) aus einer anderen Regel geerbt wird, weil sie in der eigenen
+Regel nicht neu gesetzt ist, entgeht ihr. Das verlangte den vollen
+CSS-Kaskadenalgorithmus, den eine einfache Textzerlegung nicht nachbildet.
+Geprüft ist also: dass jedes Token für sich gegen die Flächen besteht, und
+dass jede Regel, die Text- und Flächenfarbe gemeinsam benennt, zueinander
+passt — nicht, dass jede im CSS durch Kaskade und Vererbung tatsächlich
+zustande kommende Kombination zueinander passt.
 
 Die Demo-Seite unter `demo/` zeigt jede Komponente in beiden Themen und dient
-der visuellen Abnahme.
+der visuellen Abnahme. Zwei Tests (`demo/demo_test.go`) stellen sicher, dass
+sie das echte Stylesheet über `<link rel="stylesheet">` einbindet und keinen
+eigenen `<style>`-Block mitbringt — sonst ließe sich jede der oben genannten
+Prüfungen durch eine lokal „reparierte" Demo-Seite unterlaufen.
 
 ## Expertus: Umstellung auf Go
 
