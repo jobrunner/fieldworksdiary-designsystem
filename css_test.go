@@ -12,17 +12,35 @@ type fund struct {
 	wert  string
 }
 
+// cssNamedColors ist die vollständige Liste der CSS-Farbschlüsselwörter
+// (CSS Color Module, "extended color keywords", 148 Namen). Eine Auswahl
+// wie zuvor (19 Namen) lässt jede Farbe außerhalb der Auswahl durch —
+// nachgewiesen etwa mit "crimson", "tomato" oder "darkblue". transparent
+// ist kein Farbwert im Sinne der Zusage und wird gesondert behandelt.
+const cssNamedColors = `aliceblue|antiquewhite|aqua|aquamarine|azure|beige|bisque|black|blanchedalmond|blue|blueviolet|brown|burlywood|cadetblue|chartreuse|chocolate|coral|cornflowerblue|cornsilk|crimson|cyan|darkblue|darkcyan|darkgoldenrod|darkgray|darkgreen|darkgrey|darkkhaki|darkmagenta|darkolivegreen|darkorange|darkorchid|darkred|darksalmon|darkseagreen|darkslateblue|darkslategray|darkslategrey|darkturquoise|darkviolet|deeppink|deepskyblue|dimgray|dimgrey|dodgerblue|firebrick|floralwhite|forestgreen|fuchsia|gainsboro|ghostwhite|gold|goldenrod|gray|grey|green|greenyellow|honeydew|hotpink|indianred|indigo|ivory|khaki|lavender|lavenderblush|lawngreen|lemonchiffon|lightblue|lightcoral|lightcyan|lightgoldenrodyellow|lightgray|lightgreen|lightgrey|lightpink|lightsalmon|lightseagreen|lightskyblue|lightslategray|lightslategrey|lightsteelblue|lightyellow|lime|limegreen|linen|magenta|maroon|mediumaquamarine|mediumblue|mediumorchid|mediumpurple|mediumseagreen|mediumslateblue|mediumspringgreen|mediumturquoise|mediumvioletred|midnightblue|mintcream|mistyrose|moccasin|navajowhite|navy|oldlace|olive|olivedrab|orange|orangered|orchid|palegoldenrod|palegreen|paleturquoise|palevioletred|papayawhip|peachpuff|peru|pink|plum|powderblue|purple|rebeccapurple|red|rosybrown|royalblue|saddlebrown|salmon|sandybrown|seagreen|seashell|sienna|silver|skyblue|slateblue|slategray|slategrey|snow|springgreen|steelblue|tan|teal|thistle|tomato|turquoise|violet|wheat|white|whitesmoke|yellow|yellowgreen`
+
 var (
-	hexRe        = regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b`)
-	funcColorRe  = regexp.MustCompile(`\brgba?\(|\bhsla?\(`)
-	namedColorRe = regexp.MustCompile(`(?:^|[^\w-])(red|green|blue|white|black|gray|grey|orange|yellow|purple|silver|navy|teal|olive|maroon|aqua|fuchsia|lime)(?:[^\w-]|$)`)
+	hexRe = regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b`)
+	// funcColorRe erfasst die klassischen UND die modernen CSS-Farbfunktionen.
+	// oklch(), lab(), lch(), color-mix() und color() umgehen die
+	// Kontrastprüfung genauso wie rgb()/hsl() — nachgewiesen kamen sie
+	// bislang unbemerkt durch.
+	funcColorRe = regexp.MustCompile(`\brgba?\(|\bhsla?\(|\boklch\(|\boklab\(|\blab\(|\blch\(|\bcolor-mix\(|\bcolor\(`)
+	// uriHexRe erfasst ein prozentkodiertes "#" (%23) gefolgt von Hex-Ziffern
+	// — der übliche Weg, einem <select> per data-URI (etwa
+	// background-image: url("data:image/svg+xml,...fill='%23ff0000'..."))
+	// einen eigenen Pfeil mit fest kodierter Farbe zu geben. Ein rohes "#"
+	// kommt darin nicht vor, hexRe findet diesen Fall deshalb nicht.
+	uriHexRe     = regexp.MustCompile(`%23[0-9a-fA-F]{3,8}`)
+	namedColorRe = regexp.MustCompile(`(?:^|[^\w-])(` + cssNamedColors + `)(?:[^\w-]|$)`)
 	varNutzungRe = regexp.MustCompile(`var\((--[a-z-]+)`)
 	varDefRe     = regexp.MustCompile(`(--[a-z-]+):`)
 )
 
 // farbliterale prüft CSS-Text auf Farbliterale und gibt Fundstellen mit
 // Zeilennummern zurück. Kommentare werden ignoriert. transparent ist erlaubt,
-// alle anderen benannten Farben und Hex-Werte gelten als Verstoß.
+// alle anderen benannten Farben, Hex-Werte, Farbfunktionen (klassisch und
+// modern) sowie prozentkodierte Hex-Werte in data-URIs gelten als Verstoß.
 func farbliterale(css string) []fund {
 	// Kommentare entfernen, aber Zeilennummern durch Zeilenumbrüche erhalten
 	kommentarlos := removeComments(css)
@@ -31,14 +49,19 @@ func farbliterale(css string) []fund {
 	for i, zeile := range strings.Split(kommentarlos, "\n") {
 		lineNum := i + 1
 
-		// Hex-Farben prüfen
-		if m := hexRe.FindString(zeile); m != "" {
+		// Hex-Farben prüfen — ALLE auf der Zeile, nicht nur die erste.
+		for _, m := range hexRe.FindAllString(zeile, -1) {
 			funde = append(funde, fund{zeile: lineNum, wert: m})
 		}
 
-		// rgb/rgba/hsl/hsla prüfen
+		// Prozentkodierte Hex-Farben in data-URIs prüfen (%23... statt #...).
+		for _, m := range uriHexRe.FindAllString(zeile, -1) {
+			funde = append(funde, fund{zeile: lineNum, wert: m})
+		}
+
+		// rgb/rgba/hsl/hsla sowie moderne Farbfunktionen prüfen
 		if funcColorRe.MatchString(zeile) {
-			funde = append(funde, fund{zeile: lineNum, wert: "rgb/rgba/hsl/hsla"})
+			funde = append(funde, fund{zeile: lineNum, wert: "rgb/rgba/hsl/hsla/oklch/lab/lch/color-mix/color"})
 		}
 
 		// Benannte Farben prüfen (außer transparent)
@@ -104,6 +127,49 @@ func TestBenannteFarbenWerdenErkannt(t *testing.T) {
 	}
 }
 
+// TestUnbekannteBenannteFarbenWerdenErkannt belegt, dass die vollständige
+// Farbwortliste greift, nicht nur eine Auswahl der bekanntesten Namen —
+// nachgewiesen durchgelassen wurden zuvor u. a. "crimson", "tomato" und
+// "darkblue".
+func TestUnbekannteBenannteFarbenWerdenErkannt(t *testing.T) {
+	for _, farbe := range []string{"crimson", "tomato", "slategray", "darkblue"} {
+		funde := farbliterale("body { color: " + farbe + "; }")
+		if len(funde) == 0 {
+			t.Errorf("Test erkennt benannte Farbe %q nicht — sollte erkannt werden", farbe)
+		}
+	}
+}
+
+// TestModerneFarbfunktionenWerdenErkannt belegt, dass oklch(), lab(), lch()
+// und color-mix() erkannt werden — die alte Prüfung kannte nur rgb()/hsl()
+// und ließ diese moderneren Schreibweisen unbemerkt durch.
+func TestModerneFarbfunktionenWerdenErkannt(t *testing.T) {
+	for _, wert := range []string{
+		"oklch(59% 0.15 250)",
+		"lab(50% 40 20)",
+		"lch(50% 40 20)",
+		"color-mix(in srgb, red 50%, blue 50%)",
+		"color(display-p3 1 0 0)",
+	} {
+		funde := farbliterale("body { color: " + wert + "; }")
+		if len(funde) == 0 {
+			t.Errorf("Test erkennt Farbfunktion %q nicht — sollte erkannt werden", wert)
+		}
+	}
+}
+
+// TestProzentkodierteHexFarbeInDataUriWirdErkannt belegt, dass ein
+// prozentkodiertes "#" in einer data-URI erkannt wird — der übliche Weg,
+// einem <select> einen eigenen Pfeil mit fest kodierter Farbe zu geben, und
+// damit der wahrscheinlichste reale Fall.
+func TestProzentkodierteHexFarbeInDataUriWirdErkannt(t *testing.T) {
+	css := `select { background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><path fill='%23ff0000'/></svg>"); }`
+	funde := farbliterale(css)
+	if len(funde) == 0 {
+		t.Error("Test erkennt prozentkodierte Hex-Farbe (%23...) in data-URI nicht — sollte erkannt werden")
+	}
+}
+
 // TestTransparentIstErlaubt prüft, dass transparent nicht als Verstoß
 // gemeldet wird — es ist keine Farbe im Sinne der Zusage.
 func TestTransparentIstErlaubt(t *testing.T) {
@@ -139,6 +205,22 @@ body { color: red; }`
 	}
 	if funde[0].wert != "red" {
 		t.Errorf("erwartet 'red', got %q", funde[0].wert)
+	}
+}
+
+// TestAlleHexwerteEinerZeileWerdenGemeldet belegt, dass die Meldung nicht
+// nur den ERSTEN Hex-Wert je Zeile nennt — ein zweiter Verstoß in derselben
+// Zeile blieb zuvor unerwähnt.
+func TestAlleHexwerteEinerZeileWerdenGemeldet(t *testing.T) {
+	funde := farbliterale("body { border: 1px solid #ff0000; background: #00ff00; }")
+	if len(funde) != 2 {
+		t.Fatalf("erwartet 2 Funde (beide Hex-Werte der Zeile), got %d", len(funde))
+	}
+	werte := map[string]bool{funde[0].wert: true, funde[1].wert: true}
+	for _, erwartet := range []string{"#ff0000", "#00ff00"} {
+		if !werte[erwartet] {
+			t.Errorf("erwartet Fund für %q, nicht dabei: %v", erwartet, funde)
+		}
 	}
 }
 
