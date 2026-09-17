@@ -101,6 +101,44 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 	}
 }
 
+// TestIndexBindetStylesheetEinUndSchummeltNicht hält die Grundvoraussetzung
+// der Referenzseite fest: sie muss das echte Design-System-Stylesheet
+// einbinden und darf keinen eigenen <style>-Block mitbringen. Ohne diese
+// Prüfung ließe sich jeder Test hier durch einen lokal „reparierten"
+// <style>-Block oder das stille Entfernen des <link> unterlaufen — die
+// Demo-Seite ist laut Entwurf für die Mehrzahl der Komponenten die einzige
+// Prüfstelle, und eine Seite, die ihr eigenes Stylesheet flickt, gäbe eine
+// gute Abnahme für ein tatsächlich kaputtes designsystem.css.
+func TestIndexBindetStylesheetEinUndSchummeltNicht(t *testing.T) {
+	html := string(indexHTML)
+	if !strings.Contains(html, `<link rel="stylesheet" href="/designsystem.css" />`) &&
+		!strings.Contains(html, `<link rel="stylesheet" href="/designsystem.css">`) {
+		t.Error("demo/index.html enthält nicht <link rel=\"stylesheet\" href=\"/designsystem.css\">")
+	}
+	if strings.Contains(html, "<style") {
+		t.Error("demo/index.html enthält einen eigenen <style>-Block — das würde ein kaputtes designsystem.css lokal überdecken")
+	}
+}
+
+// TestSprunglinkIstErstesFokussierbaresElement prüft, dass der Sprunglink
+// unmittelbar hinter dem öffnenden <body> steht — vor <main>, nicht danach
+// und nicht innerhalb davon. Ein Sprunglink, der irgendwo später im
+// Dokument steht (etwa am Ende von <main>, dem Bereich, den er überspringen
+// soll), ist funktionslos: er muss das erste fokussierbare Element im
+// Dokument sein, sonst hat Tab ihn längst überholt, bevor er greift.
+func TestSprunglinkIstErstesFokussierbaresElement(t *testing.T) {
+	html := string(indexHTML)
+	iBody := strings.Index(html, "<body>")
+	iSkip := strings.Index(html, `class="skip-link"`)
+	iMain := strings.Index(html, "<main")
+	if iBody < 0 || iSkip < 0 || iMain < 0 {
+		t.Fatal("demo/index.html enthält nicht <body>, .skip-link und <main wie erwartet")
+	}
+	if !(iBody < iSkip && iSkip < iMain) {
+		t.Errorf("Reihenfolge ist %d (<body>) < %d (.skip-link) < %d (<main) nicht erfüllt — der Sprunglink muss zwischen <body> und <main stehen", iBody, iSkip, iMain)
+	}
+}
+
 func TestHandlerLiefertSeiteUndCSS(t *testing.T) {
 	srv := httptest.NewServer(Handler())
 	defer srv.Close()
