@@ -6,6 +6,12 @@ import (
 	"testing"
 )
 
+// fund beschreibt eine gefundene Farbe im Klartext.
+type fund struct {
+	zeile int
+	wert  string
+}
+
 var (
 	hexRe         = regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b`)
 	funcColorRe   = regexp.MustCompile(`\brgba?\(|\bhsla?\(`)
@@ -14,48 +20,48 @@ var (
 	varDefRe      = regexp.MustCompile(`(--[a-z-]+):`)
 )
 
-// farbliterale prüft CSS-Text auf Farbliterale und gibt Fundstellen zurück.
-// Jede Fundstelle ist ein String mit Zeilennummer, Farbe und Zeile.
-// Kommentare werden ignoriert. transparent und currentColor sind erlaubt,
+// farbliterale prüft CSS-Text auf Farbliterale und gibt Fundstellen mit
+// Zeilennummern zurück. Kommentare werden ignoriert. transparent ist erlaubt,
 // alle anderen benannten Farben und Hex-Werte gelten als Verstoß.
-func farbliterale(css string) []string {
-	// Kommentare entfernen, aber Zeilennummern durch Leerzeichen erhalten
+func farbliterale(css string) []fund {
+	// Kommentare entfernen, aber Zeilennummern durch Zeilenumbrüche erhalten
 	kommentarlos := removeComments(css)
 
-	var funde []string
+	var funde []fund
 	for i, zeile := range strings.Split(kommentarlos, "\n") {
 		lineNum := i + 1
 
 		// Hex-Farben prüfen
 		if m := hexRe.FindString(zeile); m != "" {
-			funde = append(funde, m)
+			funde = append(funde, fund{zeile: lineNum, wert: m})
 		}
 
 		// rgb/rgba/hsl/hsla prüfen
 		if funcColorRe.MatchString(zeile) {
-			funde = append(funde, "rgb/rgba/hsl/hsla")
+			funde = append(funde, fund{zeile: lineNum, wert: "rgb/rgba/hsl/hsla"})
 		}
 
-		// Benannte Farben prüfen (außer transparent, currentColor)
+		// Benannte Farben prüfen (außer transparent)
 		for _, match := range namedColorRe.FindAllStringSubmatch(zeile, -1) {
 			if len(match) > 1 {
 				farbe := match[1]
-				if farbe != "transparent" && farbe != "currentColor" {
-					funde = append(funde, farbe)
+				if farbe != "transparent" {
+					funde = append(funde, fund{zeile: lineNum, wert: farbe})
 				}
 			}
 		}
-		_ = lineNum // lineNum für zukünftige Verwendung
 	}
 	return funde
 }
 
 // removeComments entfernt alle /* ... */ Kommentare aus CSS,
-// behält aber Zeilennummern durch Leerzeichen.
+// behält aber alle Zeilenumbrüche: damit bleiben die Zeilennummern
+// in den Originalzellen erhalten.
 func removeComments(css string) string {
 	re := regexp.MustCompile(`(?s)/\*.*?\*/`)
 	return re.ReplaceAllStringFunc(css, func(s string) string {
-		// Ersetze den Kommentar durch Leerzeichen, behalte aber Umbrüche
+		// Ersetze den Kommentar charakterweise: Zeilenumbrüche bleiben,
+		// alles andere wird zu Leerzeichen.
 		return strings.Map(func(r rune) rune {
 			if r == '\n' {
 				return '\n'
@@ -69,12 +75,13 @@ func TestBaseCSSEnthaeltKeineFarbliterale(t *testing.T) {
 	// Eine Farbe im Klartext in base.css umgeht die Kontrastprüfung aus
 	// tokens_test.go vollständig — sie stünde nirgends, wo der Test sie
 	// fände. Ausgenommen sind Schwarz- und Weißwerte in Schatten, die
-	// keine Textfarbe sind; die stehen in tokens.css. transparent und
-	// currentColor sind erlaubt — sie sind keine Farben im Sinne der Zusage.
+	// keine Textfarbe sind; die stehen in tokens.css. transparent ist erlaubt
+	// — es ist keine Farbe im Sinne der Zusage.
 	funde := farbliterale(string(BaseCSS()))
 	if len(funde) > 0 {
-		for _, farbe := range funde {
-			t.Errorf("base.css enthält den Farbwert %q — gehört nach tokens.css", farbe)
+		for _, f := range funde {
+			t.Errorf("base.css:%d enthält den Farbwert %q — gehört nach tokens.css",
+				f.zeile, f.wert)
 		}
 	}
 }
@@ -97,17 +104,12 @@ func TestBenannteFarbenWerdenErkannt(t *testing.T) {
 	}
 }
 
-// TestTransparentUndCurrentColorSindErlaubt prüft, dass diese speziellen
-// Werte nicht gemeldet werden, obwohl sie benannte Farben sind.
-func TestTransparentUndCurrentColorSindErlaubt(t *testing.T) {
-	transparent := farbliterale(".tab { border-bottom-color: transparent; }")
-	if len(transparent) > 0 {
+// TestTransparentIstErlaubt prüft, dass transparent nicht als Verstoß
+// gemeldet wird — es ist keine Farbe im Sinne der Zusage.
+func TestTransparentIstErlaubt(t *testing.T) {
+	funde := farbliterale(".tab { border-bottom-color: transparent; }")
+	if len(funde) > 0 {
 		t.Error("'transparent' sollte erlaubt sein, wird aber als Verstoß gemeldet")
-	}
-
-	current := farbliterale(".icon { color: currentColor; }")
-	if len(current) > 0 {
-		t.Error("'currentColor' sollte erlaubt sein, wird aber als Verstoß gemeldet")
 	}
 }
 
@@ -117,6 +119,26 @@ func TestKommentareWerdenIgnoriert(t *testing.T) {
 	funde := farbliterale("/* rot: #ff0000 */\nbody { color: var(--text); }")
 	if len(funde) > 0 {
 		t.Error("Farbe in Kommentar sollte ignoriert werden, wird aber gemeldet")
+	}
+}
+
+// TestMehzeiligKommentareErhaltenZeilennummern prüft, dass die Zeilennummern
+// auch nach mehzeiligen Kommentaren noch korrekt sind.
+func TestMehzeiligKommentareErhaltenZeilennummern(t *testing.T) {
+	css := `/* Kommentar
+über mehrere
+Zeilen */
+body { color: red; }`
+	funde := farbliterale(css)
+	if len(funde) != 1 {
+		t.Fatalf("erwartet 1 Fund, got %d", len(funde))
+	}
+	// Der Verstoß sollte auf Zeile 4 sein (nach dem 3zeiligen Kommentar)
+	if funde[0].zeile != 4 {
+		t.Errorf("erwartet Zeile 4, got %d", funde[0].zeile)
+	}
+	if funde[0].wert != "red" {
+		t.Errorf("erwartet 'red', got %q", funde[0].wert)
 	}
 }
 
