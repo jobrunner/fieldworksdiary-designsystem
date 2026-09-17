@@ -13,11 +13,11 @@ type fund struct {
 }
 
 var (
-	hexRe         = regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b`)
-	funcColorRe   = regexp.MustCompile(`\brgba?\(|\bhsla?\(`)
-	namedColorRe  = regexp.MustCompile(`(?:^|[^\w-])(red|green|blue|white|black|gray|grey|orange|yellow|purple|silver|navy|teal|olive|maroon|aqua|fuchsia|lime)(?:[^\w-]|$)`)
-	varNutzungRe  = regexp.MustCompile(`var\((--[a-z-]+)`)
-	varDefRe      = regexp.MustCompile(`(--[a-z-]+):`)
+	hexRe        = regexp.MustCompile(`#[0-9a-fA-F]{3,8}\b`)
+	funcColorRe  = regexp.MustCompile(`\brgba?\(|\bhsla?\(`)
+	namedColorRe = regexp.MustCompile(`(?:^|[^\w-])(red|green|blue|white|black|gray|grey|orange|yellow|purple|silver|navy|teal|olive|maroon|aqua|fuchsia|lime)(?:[^\w-]|$)`)
+	varNutzungRe = regexp.MustCompile(`var\((--[a-z-]+)`)
+	varDefRe     = regexp.MustCompile(`(--[a-z-]+):`)
 )
 
 // farbliterale prüft CSS-Text auf Farbliterale und gibt Fundstellen mit

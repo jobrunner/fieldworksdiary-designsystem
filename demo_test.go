@@ -11,6 +11,71 @@ import (
 // klassenRe findet die Klassennamen, die base.css definiert.
 var klassenRe = regexp.MustCompile(`^\.([a-z][a-z0-9-]*)`)
 
+// classAttrRe findet alle class="..."-Attribute in HTML.
+var classAttrRe = regexp.MustCompile(`class="([^"]*)"`)
+
+// benutzteKlassen extrahiert die tatsächlich vergebenen Klassennamen aus HTML,
+// indem es nur class="..."-Attribute berücksichtigt. So werden id-Attribute,
+// Klassenerwähnungen im Fließtext oder per display:none versteckte Elemente
+// nicht fälschlicherweise als „gezeigt" gewertet.
+func benutzteKlassen(html string) map[string]bool {
+	klassen := make(map[string]bool)
+	for _, m := range classAttrRe.FindAllStringSubmatch(html, -1) {
+		if len(m) > 1 {
+			for _, k := range strings.Fields(m[1]) {
+				klassen[k] = true
+			}
+		}
+	}
+	return klassen
+}
+
+func TestBenutzteKlassenExtrahiertNurAusClassAttributen(t *testing.T) {
+	tests := []struct {
+		html         string
+		erwartet     map[string]bool
+		beschreibung string
+	}{
+		{
+			`<span id="btn">Text</span>`,
+			map[string]bool{},
+			"id-Attribut ist keine Klasse",
+		},
+		{
+			`<div class="card btn-row">Text</div>`,
+			map[string]bool{"card": true, "btn-row": true},
+			"mehrere Klassen im Attribut",
+		},
+		{
+			`<p>Die Klasse btn ist blau.</p>`,
+			map[string]bool{},
+			"Klassenname im Text ergibt keine Klasse",
+		},
+		{
+			`<div class="card">A</div><div class="btn">B</div>`,
+			map[string]bool{"card": true, "btn": true},
+			"mehrere Attribute zusammen",
+		},
+	}
+
+	for _, test := range tests {
+		got := benutzteKlassen(test.html)
+		if len(got) != len(test.erwartet) {
+			t.Errorf("%s: Länge %d, erwartet %d", test.beschreibung, len(got), len(test.erwartet))
+		}
+		for k := range test.erwartet {
+			if !got[k] {
+				t.Errorf("%s: .%s fehlt", test.beschreibung, k)
+			}
+		}
+		for k := range got {
+			if !test.erwartet[k] {
+				t.Errorf("%s: unerwartete .%s", test.beschreibung, k)
+			}
+		}
+	}
+}
+
 func TestDemoZeigtJedeKomponente(t *testing.T) {
 	// Welche Klassen base.css anbietet, steht in base.css — nicht in einer
 	// Liste hier, die beim nächsten Zuwachs vergessen würde.
@@ -26,9 +91,9 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 	}
 
 	demo := string(demoHTML)
+	benutzt := benutzteKlassen(demo)
 	for klasse := range angeboten {
-		if !strings.Contains(demo, `"`+klasse+`"`) && !strings.Contains(demo, `"`+klasse+` `) &&
-			!strings.Contains(demo, ` `+klasse+`"`) && !strings.Contains(demo, ` `+klasse+` `) {
+		if !benutzt[klasse] {
 			t.Errorf("Die Demo-Seite zeigt .%s nicht — die Klasse wäre nirgends vor dem Einsatz zu sehen", klasse)
 		}
 	}
