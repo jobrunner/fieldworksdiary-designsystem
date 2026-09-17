@@ -8,6 +8,15 @@
    contrast_test.go rechnet jeden Wert im Build nach. */
 
 :root {
+  /* Sagt dem Browser, dass beide Themen unterstützt werden: Formularrahmen,
+     Bildlaufleisten und sonstige native Vorgaben folgen damit dem Thema
+     statt stur hell zu bleiben. Ohne diese Zeile bleiben außerdem
+     Browser-Vorgabefarben für Links im dunklen Thema hell — unbesucht
+     #0000EE, nur 1.90:1 gegen --bg, besucht #551A8B, 1.62:1. base.css
+     setzt inzwischen eine eigene a-Regel (siehe dort), color-scheme bleibt
+     trotzdem gesetzt, weil auch andere native Vorgaben davon profitieren. */
+  color-scheme: light dark;
+
   /* Flächen */
   --bg: #f8fafc;
   --card: #ffffff;

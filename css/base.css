@@ -25,6 +25,20 @@ body {
   padding: 1rem;
 }
 
+/* Ohne eigene Regel greift die Browser-Vorgabe #0000EE — im dunklen Thema
+   nur 1.90:1 gegen --bg, besucht sogar 1.62:1 (#551A8B). --accent erreicht
+   in beiden Themen 7:1 gegen --bg und --card (siehe tokens_test.go).
+   Unterstrichen zusätzlich zur Farbe, weil Farbe allein kein
+   Unterscheidungsmerkmal sein darf (WCAG 1.4.1). */
+a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+a:visited {
+  color: var(--accent);
+}
+
 /* Sichtbarer Fokus ist Pflicht (WCAG 2.4.7). Der Browser-Vorgabering
    verschwindet auf farbigen Flächen, deshalb ein eigener mit Abstand —
    der Abstand hält ihn auch auf einem Knopf in Akzentfarbe sichtbar. */

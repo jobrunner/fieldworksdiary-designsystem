@@ -10,8 +10,41 @@ import (
 // bewusst keine Funktionsaufrufe oder mehrteiligen Farbangaben enthält.
 var tokenRe = regexp.MustCompile(`(--[a-z-]+):\s*([^;]+);`)
 
+// keineTextfarbe listet Token, die keine Textfarbe sind und deshalb nicht
+// der 7:1-Pflicht aus TestAlleTextfarbenErreichenAAA unterliegen. Jedes
+// andere Token in tokens.css — auch ein künftig hinzugefügtes — muss diese
+// Pflicht erfüllen. Ein neues Token kostet damit eine bewusste Aufnahme in
+// diese Liste statt stillschweigend ungeprüft zu bleiben.
+var keineTextfarbe = map[string]bool{
+	"--bg":           true,
+	"--card":         true,
+	"--border":       true,
+	"--control-line": true, // eigene 3:1-Prüfung, siehe TestControlLineErreicht3zu1
+	"--shadow":       true,
+	"--radius":       true,
+	"--radius-sm":    true,
+	"--font":         true,
+	"--font-mono":    true,
+	"--accent-hover": true, // Knopffläche, eigene Prüfung siehe TestKnopfbeschriftungAufAkzent
+}
+
+// textTokenNamen liefert die Namen aller Token in einem Themen-Satz, die
+// laut keineTextfarbe nicht ausgenommen sind — also als Textfarbe gelten
+// und 7:1 gegen --bg und --card erfüllen müssen.
+func textTokenNamen(tokens map[string]string) []string {
+	var namen []string
+	for name := range tokens {
+		if !keineTextfarbe[name] {
+			namen = append(namen, name)
+		}
+	}
+	return namen
+}
+
 // parseThemes zerlegt tokens.css in das helle und das dunkle Thema. Der
 // dunkle Satz steht im @media-Block; alles davor gehört zum hellen.
+// Die Annahme, dass GENAU EIN @media-Block existiert und dieser das dunkle
+// Thema ist, wird in TestGenauEinMediaBlockFuerDunkel gesondert geprüft.
 func parseThemes(t *testing.T) (hell, dunkel map[string]string) {
 	t.Helper()
 	css := string(TokensCSS())
@@ -34,18 +67,41 @@ func parseThemes(t *testing.T) (hell, dunkel map[string]string) {
 	return hell, dunkel
 }
 
-func TestTextTokensErreichenAAA(t *testing.T) {
-	// Geprüft wird gegen BEIDE Flächen: --card ist im dunklen Thema heller
-	// als --bg und damit die strengere Bezugsfläche. Ein Wert, der nur
-	// gegen den Seitenhintergrund geprüft ist, versagt auf der Karte.
-	textTokens := []string{"--text", "--text-muted", "--text-disabled"}
+// TestGenauEinMediaBlockFuerDunkel hält die Annahme aus parseThemes fest,
+// statt sie stillschweigend vorauszusetzen: stünde je ein @media
+// (min-width: …) vor dem Dunkelblock, würde parseThemes die halbe helle
+// Palette dem dunklen Thema zurechnen und gegen die falschen Flächen
+// prüfen.
+func TestGenauEinMediaBlockFuerDunkel(t *testing.T) {
+	css := string(TokensCSS())
+	anzahl := strings.Count(css, "@media")
+	if anzahl != 1 {
+		t.Fatalf("tokens.css enthält %d @media-Blöcke, parseThemes setzt genau einen voraus (das dunkle Thema)", anzahl)
+	}
+	rest := css[strings.Index(css, "@media"):]
+	if j := strings.Index(rest, "{"); j >= 0 {
+		rest = rest[:j]
+	}
+	if !strings.Contains(rest, "prefers-color-scheme: dark") {
+		t.Errorf("der einzige @media-Block lautet %q, erwartet prefers-color-scheme: dark", strings.TrimSpace(rest))
+	}
+}
 
+// TestAlleTextfarbenErreichenAAA prüft jedes Token, das keine Ausnahme in
+// keineTextfarbe ist, gegen BEIDE Flächen: --card ist im dunklen Thema
+// heller als --bg und damit die strengere Bezugsfläche. Ein Wert, der nur
+// gegen den Seitenhintergrund geprüft ist, versagt auf der Karte.
+//
+// Die Liste der geprüften Namen steht damit nicht im Testcode, sondern
+// ergibt sich aus tokens.css selbst — ein neues Textfarb-Token wird ohne
+// weiteres Zutun erfasst.
+func TestAlleTextfarbenErreichenAAA(t *testing.T) {
 	hell, dunkel := parseThemes(t)
 	for _, c := range []struct {
 		thema  string
 		tokens map[string]string
 	}{{"hell", hell}, {"dunkel", dunkel}} {
-		for _, name := range textTokens {
+		for _, name := range textTokenNamen(c.tokens) {
 			for _, flaeche := range []string{"--bg", "--card"} {
 				pruefe(t, c.thema, c.tokens, name, flaeche, 7.0)
 			}
@@ -53,17 +109,31 @@ func TestTextTokensErreichenAAA(t *testing.T) {
 	}
 }
 
-func TestStatusfarbenErreichenAAA(t *testing.T) {
-	hell, dunkel := parseThemes(t)
-	for _, c := range []struct {
-		thema  string
-		tokens map[string]string
-	}{{"hell", hell}, {"dunkel", dunkel}} {
-		for _, name := range []string{"--success", "--error", "--warning"} {
-			for _, flaeche := range []string{"--bg", "--card"} {
-				pruefe(t, c.thema, c.tokens, name, flaeche, 7.0)
-			}
+// TestAuswahllogikErfasstNeuesToken belegt anhand eines eigenen CSS-Texts
+// (nicht tokens.css selbst), dass textTokenNamen ein hinzugefügtes
+// Farbtoken tatsächlich in die Prüfung aufnimmt und eine Ausnahme wie --bg
+// nicht fälschlich mit aufnimmt.
+func TestAuswahllogikErfasstNeuesToken(t *testing.T) {
+	css := `:root {
+		--bg: #ffffff;
+		--text-ganz-neu: #112233;
+	}`
+	tokens := map[string]string{}
+	for _, m := range tokenRe.FindAllStringSubmatch(css, -1) {
+		tokens[m[1]] = strings.TrimSpace(m[2])
+	}
+	namen := textTokenNamen(tokens)
+	gefunden := false
+	for _, n := range namen {
+		if n == "--text-ganz-neu" {
+			gefunden = true
 		}
+		if n == "--bg" {
+			t.Error("--bg ist keine Textfarbe und sollte von der Auswahllogik nicht erfasst werden")
+		}
+	}
+	if !gefunden {
+		t.Error("ein neu hinzugefügtes Token --text-ganz-neu wird von der Auswahllogik nicht erfasst — genau das soll dieser Test verhindern")
 	}
 }
 
@@ -82,25 +152,20 @@ func TestControlLineErreicht3zu1(t *testing.T) {
 	}
 }
 
-func TestWeisserTextAufAkzent(t *testing.T) {
-	// Der primäre Knopf trägt weiße Schrift auf --accent. Im dunklen Thema
-	// ist --accent eine Textfarbe, keine Fläche — dort gilt die Prüfung aus
-	// TestTextTokensErreichenAAA sinngemäß über --accent selbst.
-	hell, _ := parseThemes(t)
-	akzent, err := ParseHex(hell["--accent"])
-	if err != nil {
-		t.Fatalf("--accent: %v", err)
-	}
-	weiss, _ := ParseHex("#ffffff")
-	if got := ContrastRatio(akzent, weiss); got < 7.0 {
-		t.Errorf("weißer Text auf --accent (%s): %.2f:1, gefordert >= 7:1", hell["--accent"], got)
-	}
-}
-
-func TestAkzentImDunklenThemaIstLesbar(t *testing.T) {
-	_, dunkel := parseThemes(t)
-	for _, flaeche := range []string{"--bg", "--card"} {
-		pruefe(t, "dunkel", dunkel, "--accent", flaeche, 7.0)
+// TestKnopfbeschriftungAufAkzent prüft die Knopfbeschriftung gegen ihre
+// tatsächliche Fläche in beiden Zuständen und beiden Themen. base.css setzt
+// die Beschriftung auf var(--card) (nicht auf Weiß) — dieser Test behauptet
+// deshalb dasselbe wie das CSS, statt einen eigenen, davon abweichenden
+// Literalwert zu prüfen.
+func TestKnopfbeschriftungAufAkzent(t *testing.T) {
+	hell, dunkel := parseThemes(t)
+	for _, c := range []struct {
+		thema  string
+		tokens map[string]string
+	}{{"hell", hell}, {"dunkel", dunkel}} {
+		for _, flaeche := range []string{"--accent", "--accent-hover"} {
+			pruefe(t, c.thema, c.tokens, "--card", flaeche, 7.0)
+		}
 	}
 }
 
