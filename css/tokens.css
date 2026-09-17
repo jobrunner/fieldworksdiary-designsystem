@@ -1,0 +1,77 @@
+/* Gemeinsame Gestaltungswerte der fieldworksdiary-Dienste.
+   Diese Datei enthält ausschließlich Variablen — kein Selektor hier
+   verändert die Darstellung. Wer Komponenten will, bindet base.css dazu.
+
+   Alle Textfarben erreichen 7:1 gegen --bg UND --card (WCAG 2.2, SC 1.4.6).
+   Die Dienste werden im Gelände auf Handydisplays bei Tageslicht gelesen;
+   die 4.5:1 der Stufe AA reichen dafür erfahrungsgemäß nicht.
+   contrast_test.go rechnet jeden Wert im Build nach. */
+
+:root {
+  /* Flächen */
+  --bg: #f8fafc;
+  --card: #ffffff;
+
+  /* Text */
+  --text: #1e293b;
+  --text-muted: #475569;
+  /* Gleich dem gedämpften Text: ein gesperrtes Bedienelement darf nicht
+     durch schwachen Kontrast erkennbar gemacht werden, sondern durch
+     aria-disabled, Mauszeiger und fehlende Reaktion. */
+  --text-disabled: #475569;
+
+  /* Akzent — trägt weiße Schrift auf der Fläche des primären Knopfes */
+  --accent: #1e40af;
+  --accent-hover: #1e3a8a;
+
+  /* Status */
+  --success: #146330;
+  --error: #991b1b;
+  --warning: #93390e;
+
+  /* Linien. --border ist dekorativ und darf zart bleiben; --control-line
+     begrenzt Bedienelemente und macht sie überhaupt erst erkennbar.
+     WCAG 1.4.11 fordert nur für Letztere einen Kontrast (>= 3:1) —
+     dekorative Trennlinien sind ausdrücklich ausgenommen. Getrennte
+     Tokens, weil ein gemeinsamer Wert entweder die Linien zu hart oder
+     die Bedienelemente zu schwach macht. */
+  --border: #e2e8f0;
+  --control-line: #767676;
+
+  /* Form */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  /* Schrift */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "SF Mono", Monaco, ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+
+    --text: #f1f5f9;
+    --text-muted: #b4c0ce;
+    --text-disabled: #b4c0ce;
+
+    /* Im dunklen Thema ist der Akzent eine Textfarbe, keine Fläche:
+       ein Knopf bekommt hier dunkle Schrift auf hellem Blau. */
+    --accent: #93c5fd;
+    --accent-hover: #bfdbfe;
+
+    --success: #86efac;
+    --error: #fca5a5;
+    --warning: #fcd34d;
+
+    --border: #334155;
+    --control-line: #8695a8;
+
+    /* Auf dunklem Grund trägt ein Schatten nicht: --card steht gegen --bg
+       nur bei 1.22:1. Karten heben sich hier über ihren Rand ab, nicht
+       über den Schatten — siehe .card in base.css. */
+    --shadow: none;
+  }
+}
