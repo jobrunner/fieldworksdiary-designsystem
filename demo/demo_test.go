@@ -93,8 +93,29 @@ var regelKopfRe = regexp.MustCompile(`([^{}]+)\{`)
 // "input", nicht aber "*" oder ":focus-visible".
 var elementNameRe = regexp.MustCompile(`^[a-z][a-z0-9]*$`)
 
-// tagRe findet öffnende HTML-Tags in einem HTML-Text.
-var tagRe = regexp.MustCompile(`<([a-zA-Z][a-zA-Z0-9]*)`)
+// tagRe findet öffnende HTML-Tags samt ihrer Attribute in einem HTML-Text,
+// um danach prüfen zu können, ob das Attribut class="skip-link" dabei ist.
+var tagRe = regexp.MustCompile(`<([a-zA-Z][a-zA-Z0-9]*)([^>]*)>`)
+
+// istSprunglink erkennt, ob die Attribute eines Tags die Klasse
+// "skip-link" tragen. Der Sprunglink ist per Gestaltung unsichtbar
+// (position: absolute; left: -999px, erst bei Fokus sichtbar über
+// .skip-link:focus) und dient nur der Tastaturnavigation, nicht der
+// Abnahme der Komponente — ein <a class="skip-link"> darf deshalb nicht
+// als Beleg dafür zählen, dass die Link-Komponente auf der Seite zu sehen
+// ist.
+func istSprunglink(attribute string) bool {
+	m := classAttrRe.FindStringSubmatch(attribute)
+	if m == nil {
+		return false
+	}
+	for _, klasse := range strings.Fields(m[1]) {
+		if klasse == "skip-link" {
+			return true
+		}
+	}
+	return false
+}
 
 // keineKomponente führt Elemente, die base.css zwar per Element-Selektor
 // gestalten könnte, die aber keine für sich sichtbare Komponente sind —
@@ -187,10 +208,16 @@ func elementSelektoren(css string) map[string]bool {
 
 // benutzteElemente extrahiert die Tags, die in einem HTML-Text tatsächlich
 // vorkommen — Gegenstück zu benutzteKlassen, nur für Elemente statt
-// Klassen.
+// Klassen. Ein Vorkommen mit class="skip-link" zählt nicht: es zeigt die
+// Komponente nicht, sondern ist reine Gerüststruktur für die
+// Tastaturnavigation (siehe istSprunglink). Andere Tags derselben Art an
+// anderer Stelle im Dokument zählen weiterhin normal.
 func benutzteElemente(html string) map[string]bool {
 	elemente := make(map[string]bool)
 	for _, m := range tagRe.FindAllStringSubmatch(html, -1) {
+		if istSprunglink(m[2]) {
+			continue
+		}
 		elemente[strings.ToLower(m[1])] = true
 	}
 	return elemente
@@ -236,6 +263,32 @@ a:visited {
 	}
 	if !benutzteElemente(mitLink)["a"] {
 		t.Error(`benutzteElemente hat <a> in HTML mit einem Verweis nicht gefunden`)
+	}
+}
+
+// TestBenutzteElementeZaehltSprunglinkNicht belegt genau den Fall, der die
+// erste Fassung der Prüfung unbemerkt bestehen ließ: eine Demo-Seite, auf
+// der der einzige <a> der unsichtbare Sprunglink ist. benutzteElemente muss
+// "a" hier als nicht gezeigt melden — sonst besteht der Zustand, den der
+// ursprüngliche Befund (kein sichtbarer Link auf der Referenzseite) genau
+// beschreibt, die Prüfung unentdeckt.
+func TestBenutzteElementeZaehltSprunglinkNicht(t *testing.T) {
+	nurSprunglink := `<body>
+  <a class="skip-link" href="#inhalt">Sprunglink (nur bei Fokus sichtbar)</a>
+  <main id="inhalt"><p>Kein weiterer Verweis auf der Seite.</p></main>
+</body>`
+
+	if benutzteElemente(nurSprunglink)["a"] {
+		t.Error(`benutzteElemente hat ein <a class="skip-link"> fälschlich als gezeigten Link gewertet — der Sprunglink ist per Gestaltung unsichtbar und taugt nicht als Beleg`)
+	}
+
+	mitEchtemLinkUndSprunglink := `<body>
+  <a class="skip-link" href="#inhalt">Sprunglink</a>
+  <main id="inhalt"><p><a href="/designsystem.css">Stylesheet</a></p></main>
+</body>`
+
+	if !benutzteElemente(mitEchtemLinkUndSprunglink)["a"] {
+		t.Error(`benutzteElemente hat einen echten Link neben dem Sprunglink nicht gefunden`)
 	}
 }
 
