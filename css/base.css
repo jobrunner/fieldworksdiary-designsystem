@@ -1,0 +1,358 @@
+/* Reset und Basiskomponenten der fieldworksdiary-Dienste.
+   Setzt tokens.css voraus: jede Farbe hier ist eine Variable, kein Wert.
+   Aufgenommen ist, was mehr als ein Dienst braucht — Fachliches wie die
+   Wetterkarte in Tempus oder die Quellenliste in Ortus bleibt dort. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 48rem;
+  margin-inline: auto;
+  padding: 1rem;
+}
+
+/* Sichtbarer Fokus ist Pflicht (WCAG 2.4.7). Der Browser-Vorgabering
+   verschwindet auf farbigen Flächen, deshalb ein eigener mit Abstand —
+   der Abstand hält ihn auch auf einem Knopf in Akzentfarbe sichtbar. */
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --- Text --- */
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* --- Flächen --- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+/* Der Rand steht hier immer, nicht nur im dunklen Thema: auf hellem Grund
+   trägt der Schatten die Abhebung und der Rand stört nicht, auf dunklem
+   ist er die einzige Trennung (--card gegen --bg nur 1.22:1) und
+   --shadow ist dort none. Eine Regel für beide Themen statt zweier, die
+   auseinanderlaufen können. */
+
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem;
+}
+
+/* --- Formular --- */
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+/* Als Block, nicht inline: sonst klebt die Beschriftung unmittelbar am
+   Feld und beide verschmelzen optisch zu einem Wort. */
+label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+  color: var(--text);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  /* Ein <select> bemisst sich sonst an seinem längsten Eintrag und sprengt
+     bei 200 % Textgröße seine Spalte — das erzeugt waagerechtes Rollen der
+     ganzen Seite (WCAG 1.4.4 und 1.4.10). Felder bleiben deshalb an ihren
+     Rahmen gebunden, nicht an ihren Inhalt. */
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+}
+
+textarea {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 10rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkbox-row input[type="checkbox"] {
+  width: 1.05rem;
+  height: 1.05rem;
+  min-height: 0;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+/* --- Knöpfe --- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44 px, wo es geht; 24 px sind die harte Untergrenze (WCAG 2.5.8). */
+  min-height: 2.75rem;
+  padding: 0.75rem 1rem;
+  font: inherit;
+  font-weight: 500;
+  color: var(--card);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn:disabled {
+  color: var(--text-disabled);
+  background: var(--bg);
+  border-color: var(--control-line);
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  color: var(--text);
+  background: var(--card);
+  border-color: var(--control-line);
+}
+
+.btn-secondary:hover {
+  background: var(--bg);
+  border-color: var(--text-muted);
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* --- Reiter --- */
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  font: inherit;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* --- Marken --- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  color: var(--text);
+  border: 1px solid var(--control-line);
+}
+
+.badge-success {
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.badge-error {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+/* --- Tabellen --- */
+
+/* Eine breite Tabelle rollt in ihrem eigenen Kasten; die Seite selbst darf
+   nicht waagerecht rollen (WCAG 1.4.10). */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+thead th {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* --- Zustände --- */
+
+.loading {
+  display: none;
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.loading.active {
+  display: block;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  color: var(--error);
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Nur für Screenreader --- */
+
+/* display:none oder visibility:hidden wären falsch: sie nehmen das Element
+   auch aus dem Accessibility-Baum, die Ansage fiele aus. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 1;
+  padding: 0.5rem;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius-sm);
+}
+
+/* --- Größere Schirme --- */
+
+@media (min-width: 640px) {
+  .container {
+    padding: 2rem;
+  }
+
+  .card {
+    padding: 1.5rem;
+  }
+}
+
+/* --- Weniger Bewegung --- */
+
+/* Wer das im Betriebssystem einstellt, tut das oft wegen eines
+   Gleichgewichtsleidens — eine Drehung genügt, um Übelkeit auszulösen. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
