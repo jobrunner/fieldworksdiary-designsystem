@@ -1,6 +1,9 @@
 package icons
 
-import "testing"
+import (
+	"regexp"
+	"testing"
+)
 
 func TestHuelleFolgtDerBauregel(t *testing.T) {
 	got := string(huelle(`<path d="M6 9l6 6 6-6"/>`, false))
@@ -21,11 +24,27 @@ func TestHuelleFolgtDerBauregel(t *testing.T) {
 		}
 	}
 	// Feste Maße würden die Größe am Einsatzort festnageln; sie soll über
-	// CSS bestimmt werden.
-	for _, verboten := range []string{` width="`, ` height="`} {
-		if contains(got, verboten) {
-			t.Errorf("die Hülle enthält %q — die Größe gehört ins CSS", verboten)
+	// CSS bestimmt werden. Regex erfasst Attribute nach Leerraum, Tabulator,
+	// Zeilenumbruch — aber nicht stroke-width/stroke-height (Bindestrich ist
+	// kein Leerraum).
+	for name, re := range map[string]*regexp.Regexp{
+		"width":  regexp.MustCompile(`(^|[\s])width\s*=`),
+		"height": regexp.MustCompile(`(^|[\s])height\s*=`),
+	} {
+		if re.MatchString(got) {
+			t.Errorf("die Hülle enthält Attribut %q — die Größe gehört ins CSS:\n%s", name, got)
 		}
+	}
+	// Im Strich-Zweig muss fill="none" vorhanden sein und
+	// fill="currentColor" oder stroke="none" darf nicht vorhanden sein.
+	if !contains(got, `fill="none"`) {
+		t.Errorf("Strich-Hülle enthält fill=none nicht:\n%s", got)
+	}
+	if contains(got, `fill="currentColor"`) {
+		t.Errorf("Strich-Hülle enthält versehentlich fill=currentColor:\n%s", got)
+	}
+	if contains(got, `stroke="none"`) {
+		t.Errorf("Strich-Hülle enthält versehentlich stroke=none:\n%s", got)
 	}
 }
 
@@ -38,6 +57,18 @@ func TestGefuellteHuelleFuerFlaechensymbole(t *testing.T) {
 	}
 	if contains(got, `fill="none"`) {
 		t.Errorf("gefüllte Hülle enthält noch fill=none:\n%s", got)
+	}
+	if contains(got, `stroke="currentColor"`) {
+		t.Errorf("gefüllte Hülle enthält versehentlich stroke=currentColor:\n%s", got)
+	}
+}
+
+func TestIconString(t *testing.T) {
+	// Icon.String() wandelt den Typ in seinen String-Wert um.
+	icon := huelle(`<path d="M12 12"/>`, false)
+	result := icon.String()
+	if !contains(result, `viewBox="0 0 24 24"`) {
+		t.Errorf("Icon.String() gab kein gültiges SVG zurück: %s", result)
 	}
 }
 
