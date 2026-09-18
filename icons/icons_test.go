@@ -1,6 +1,8 @@
 package icons
 
 import (
+	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 )
@@ -123,6 +125,92 @@ func TestAlleEnthaeltDieBediensymbole(t *testing.T) {
 		if _, da := Alle()[name]; !da {
 			t.Errorf("Alle() kennt %q nicht", name)
 		}
+	}
+}
+
+func TestAlleSammelkeineDuplikate(t *testing.T) {
+	// Wenn zwei Teil-Sammlungen denselben Schlüssel haben, geht einer
+	// stillschweigend verloren. Diese Prüfung erkennt das, bevor eine
+	// Aufgabe folgende Symbole vergisst.
+
+	// Die Teil-Sammlungen — Reihenfolge folgt Alle()
+	teile := []map[string]Icon{
+		bediensymbole(),
+		// Aufgaben 3-5 werden weitere Sammlungen hier eintragen.
+	}
+
+	// Summe der Längen aller Teile
+	summe := 0
+	for _, teil := range teile {
+		summe += len(teil)
+	}
+
+	// Größe der Gesamtmenge
+	gesamt := len(Alle())
+
+	if summe != gesamt {
+		// Sammeln, welche Namen vorkommen, um die Meldung zu schärfen
+		seheneigene := make(map[string]bool)
+		for _, teil := range teile {
+			for k := range teil {
+				if seheneigene[k] {
+					t.Errorf("Name %q kommt in mehreren Teil-Sammlungen vor — "+
+						"Alle() überschreibt stillschweigend", k)
+				}
+				seheneigene[k] = true
+			}
+		}
+		t.Errorf("Duplikate in Teil-Sammlungen: Summe %d, Gesamtmenge %d",
+			summe, gesamt)
+	}
+}
+
+func TestAlleEnthaeltAlleSymbole(t *testing.T) {
+	// Diese Prüfung zählt alle exportierten Icon-Funktionen im Paket
+	// und vergleicht mit der Größe von Alle(). Wenn die Zahlen nicht
+	// übereinstimmen, wurde eine Symbolfunktion nicht eingetragen.
+
+	// Lese alle .go-Dateien im Package und zähle die Symbolfunktionen
+	dir := "."
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatalf("Konnte Paketverzeichnis nicht lesen: %v", err)
+	}
+
+	var functionCount int
+	var functionNames []string
+	functionRe := regexp.MustCompile(`(?m)^func ([A-Z]\w*)\(\) Icon \{`)
+
+	for _, entry := range entries {
+		if entry.IsDir() || !regexp.MustCompile(`\.go$`).MatchString(entry.Name()) {
+			continue
+		}
+		if entry.Name() == "icons_test.go" {
+			continue // Testdatei ignorieren
+		}
+
+		path := filepath.Join(dir, entry.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatalf("Konnte Datei %s nicht lesen: %v", path, err)
+		}
+
+		matches := functionRe.FindAllStringSubmatch(string(data), -1)
+		for _, match := range matches {
+			functionCount++
+			if len(match) > 1 {
+				functionNames = append(functionNames, match[1])
+			}
+		}
+	}
+
+	actualCount := len(Alle())
+
+	if functionCount != actualCount {
+		t.Errorf("Anzahl der Symbolfunktionen (%d) passt nicht zu Alle() (%d). "+
+			"Wahrscheinlich wurde eine Symbolfunktion nicht in die Sammlung eingetragen. "+
+			"Gefundene Funktionen: %v",
+			functionCount, actualCount, functionNames)
 	}
 }
 
