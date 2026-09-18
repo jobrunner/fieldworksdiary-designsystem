@@ -176,6 +176,95 @@ Tempus bereits gemeinsam verwenden — sie haben sich bewährt und ihre
 - Ein Breakpoint bei `640px`, mobile-first; ein zweiter wird heute nicht
   gebraucht und wird erst ergänzt, wenn ein Dienst ihn tatsächlich braucht
 
+## Wozu die Dienste da sind — und was daraus folgt
+
+Die fünf Frontends sind keine fertigen Erzeugnisse, sondern Bruchstücke: Jedes
+dient einer anderen Anwendergruppe als MVP, und alle sollen später in einer
+einheitlichen Anwendung wiederverwendet werden.
+
+Das kehrt die übliche Abwägung um. Ein Gestaltungsbestandteil, den heute nur
+ein Dienst braucht — ein Symbol, eine Komponente —, ist keine Sonderlocke,
+sondern ein Baustein der künftigen Anwendung. Wiedererkennbarkeit wiegt hier
+schwerer als Sparsamkeit. Im Zweifel gehört ein gestalterischer Bestandteil
+deshalb ins gemeinsame Modul, auch wenn er zunächst nur an einer Stelle
+auftaucht.
+
+Die Grenze verläuft nicht zwischen „einer braucht es" und „mehrere brauchen
+es", sondern zwischen **Gestaltung und Fachlogik**:
+
+| gehört ins Modul | bleibt beim Dienst |
+|---|---|
+| die Zeichnung eines Symbols | welcher Zustand welches Symbol bekommt |
+| Kopf- und Fußzeile als Bauform | die Beschriftungen darin |
+| Farben, Raster, Strichstärke | die Auswertung, die zu einem Wert führt |
+
+Ein Beispiel: Das Modul liefert das Wettersymbol für Nebel. Die Aussage
+„WMO-Code 45 bedeutet Nebel" ist Wetterlogik, ändert sich mit der Schnittstelle
+des Datenanbieters und bleibt in Tempus.
+
+## Seitengerüst
+
+Ortus und Tempus führen Kopf- und Fußzeile zeichengleich — sie unterscheiden
+sich in drei Wörtern:
+
+```html
+<header><h1>Ortus</h1><p>Point-in-Polygon Abfrage über Datenquellen</p></header>
+<header><h1>Tempus</h1><p>Ortsdaten mit Zeitbezug</p></header>
+
+<footer>API Dokumentation · OpenAPI Spec · Health Status
+        <div class="footer-version">ortus __ORTUS_VERSION__</div></footer>
+```
+
+Dieselbe Fußzeile, dieselben drei Verweise, dieselbe Versionszeile. Alle vier
+Go-Dienste bieten `/docs`, `/openapi.json` und `/health` an; Expertus hat
+stattdessen andere Ziele, braucht aber dieselbe Bauform.
+
+Das Modul liefert deshalb Kopf- und Fußzeile als Bauform: Name, Untertitel,
+Verweisliste und Versionsangabe werden übergeben, das Markup kommt aus dem
+Modul. Damit rückt zugleich ein Mangel aus Expertus gerade — dort beginnt der
+Kopf am Fensterrand, während der Inhalt zentriert ist; Kopf, Inhalt und Fuß
+teilen sich künftig dieselbe Spur.
+
+## Symbole
+
+Heute zeichnet jeder Dienst für sich: Ortus führt denselben Chevron dreimal in
+einer Datei, Situs und Hostus haben gar keine Symbole, und Tempus benutzt
+**Emoji** — `&#x2600;` für Sonne, 🌑 bis 🌘 für die Mondphasen, dazu 📊, 🌍, 💧.
+
+Emoji sind für diesen Zweck ungeeignet:
+
+- Sie werden vom Betriebssystem gezeichnet. Auf macOS, Windows und Android
+  sehen sie verschieden aus; die Darstellung ist nicht bestimmbar.
+- Sie sind mehrfarbig und gehorchen keiner Palette. Im dunklen Thema bleiben
+  sie, wie sie sind.
+- Sie teilen weder Strichstärke noch Raster — nebeneinander wirken sie wie
+  eine Sammlung, nicht wie ein Satz.
+- Bei den Mondphasen wiegt das am schwersten: 🌒 und 🌓 sind auf vielen
+  Systemen kaum zu unterscheiden, und die Phase **ist** die Information.
+
+Das Modul liefert die Symbole deshalb als Go-Funktionen in einem Unterpaket
+`icons/`, je eine Funktion pro Symbol, die fertiges SVG zurückgibt.
+
+**Bauregel.** Sie ist keine Erfindung, sondern übernimmt, was Ortus bereits
+tut:
+
+- `viewBox="0 0 24 24"`, keine festen `width`/`height` — die Größe bestimmt
+  der Einsatzort über CSS
+- `fill="none"`, `stroke="currentColor"`, `stroke-width="2"`,
+  `stroke-linecap="round"`, `stroke-linejoin="round"`
+- `currentColor` ist der Kern: ein Symbol nimmt damit die Farbe seines
+  Umfelds an und folgt Thema und Zustand, ohne eine eigene Farbe zu kennen.
+  Ein Symbol mit eigener Farbe stünde außerhalb der Kontrastprüfung.
+- `aria-hidden="true"` und `focusable="false"` als Vorgabe: ein Symbol neben
+  einer Beschriftung ist Schmuck und darf nicht doppelt vorgelesen werden.
+  Steht ein Symbol allein — etwa in einem Knopf ohne Text —, trägt das
+  umgebende Bedienelement die Beschriftung, nicht das Symbol.
+
+**Eine begründete Ausnahme:** Die Mondphasen dürfen Flächen verwenden
+(`fill="currentColor"`), weil bei ihnen die Aufteilung zwischen beleuchtetem
+und unbeleuchtetem Teil die Aussage trägt. Eine reine Strichzeichnung könnte
+zunehmenden und abnehmenden Halbmond nicht unterscheiden.
+
 ## Komponenten in `base.css`
 
 Aufgenommen wird, was mindestens zwei Dienste brauchen:
