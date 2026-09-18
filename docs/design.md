@@ -464,6 +464,19 @@ unbemerkt auf lokale Reste zurück.
 - Kein Umschalter für das Thema und keine gespeicherte Wahl; allein die
   Systemeinstellung entscheidet.
 - Keine dienstspezifischen Akzentfarben.
-- Keine JavaScript-Komponenten. Das Design-System liefert CSS; Verhalten
-  (Tabs, Accordion) bleibt Sache der Dienste.
+- Kein JavaScript für Verhalten, das HTML selbst mitbringt. Das Akkordeon
+  entsteht aus `<details>` und `<summary>`: auf- und zuklappbar,
+  tastaturbedienbar, von Screenreadern richtig angesagt — ohne eine Zeile
+  Skript. Das Modul liefert dafür nur die Gestaltung. Dasselbe gilt für die
+  Reiter, deren Zustand am `aria-selected` des Dienstes hängt.
+- **Eine Ausnahme: die Combobox mit Vorschlagsliste.** Sie lässt sich nicht
+  ohne Skript bauen, und ihr Verhalten ist der schwierige Teil — Pfeiltasten,
+  `aria-activedescendant`, Entprellung, Abbruch überholter Anfragen. Genau
+  dort entstehen die Fehler, und genau dort lohnt es sich, sie einmal richtig
+  zu lösen statt in jedem Dienst neu. Das Modul liefert deshalb neben `CSS()`
+  auch `JS()`.
+
+  Die Grenze bleibt dieselbe wie bei den Symbolen: Das Modul liefert das
+  Verhalten der Bedienform, nicht die Fachlogik. Woher die Vorschläge kommen
+  und was ein Treffer bedeutet, entscheidet der Dienst.
 - Kein Bundler, kein npm, kein Git-Submodul.
