@@ -14,9 +14,11 @@ func WetterKlarNacht() Icon {
 
 func WetterLeichtBewoelktTag() Icon {
 	// Wolke sitzt höher als in Niederschlagssymbolen (y=12-20 statt y=5-13), um Platz
-	// für die Sonne oben zu haben. Die letzte Arc nutzt Radius 5 statt 3.5, weil die
-	// Distanz von (16.5,11) zu (17,20) etwa 9 ist — größer als 2*3.5=7.
-	return strich(`<path d="M12 4V2M5.6 5.6L4.2 4.2M4 12H2M18.4 5.6l1.4-1.4"/><path d="M8.5 12a3.5 3.5 0 015.9-2.5"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A5 5 0 0117 20z"/>`)
+	// für die Sonne oben zu haben. Die letzte Arc nutzt Radius 4.51: Die Distanz von
+	// (16.5,11) zu (17,20) ist etwa 9, benötigt also mindestens Radius 4.5. Der Wert
+	// 4.51 sorgt dafür, dass der Renderer die Form nicht nachkorrigieren muss und die
+	// Wolke zeichengleich mit den übrigen neun ist. Siehe WetterNebel für Details.
+	return strich(`<path d="M12 4V2M5.6 5.6L4.2 4.2M4 12H2M18.4 5.6l1.4-1.4"/><path d="M8.5 12a3.5 3.5 0 015.9-2.5"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 20z"/>`)
 }
 
 func WetterLeichtBewoelktNacht() Icon {
@@ -25,48 +27,54 @@ func WetterLeichtBewoelktNacht() Icon {
 	// (Radius 3) zurück zu (10,6). Das Fehlen eines z am Ende des ersten Bogens ist
 	// beabsichtigt — die beiden Bögen sind nahtlos verbunden.
 	// Wolke sitzt höher als in Niederschlagssymbolen (y=12-20 statt y=5-13), um Platz
-	// für den Mond oben zu haben. Die letzte Arc nutzt Radius 5 statt 3.5, weil die
-	// Distanz von (16.5,11) zu (17,20) etwa 9 ist — größer als 2*3.5=7.
-	return strich(`<path d="M10 6A4 4 0 1107 2A3 3 0 0010 6z"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A5 5 0 0117 20z"/>`)
+	// für den Mond oben zu haben. Die letzte Arc nutzt Radius 4.51 wie
+	// WetterLeichtBewoelktTag — siehe dort.
+	return strich(`<path d="M10 6A4 4 0 1107 2A3 3 0 0010 6z"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 20z"/>`)
 }
 
 // WetterBewoelkt nutzt eine größere Wolke (a5 5 statt a4 4), weil dieses Symbol
-// nur die Wolke zeigt und das Feld ausfüllen kann. Alle übrigen Symbole mit Wolke
-// brauchen Platz für Niederschlag darunter (Regen, Schnee, Hagel) oder Details
-// (Nebel, Gewitter), weshalb dort die kleinere Wolkenform verwendet wird.
+// nur die Wolke zeigt und das Feld ausfüllen kann. Die letzte Arc nutzt Radius 5.76:
+// Die Distanz von (18.5,5.5) zu (18,17) ist etwa 11.5, benötigt also mindestens
+// Radius 5.75. Der Wert 5.76 sorgt für exakte Beschreibung ohne Renderer-Nachkorrektur.
 func WetterBewoelkt() Icon {
-	return strich(`<path d="M18 17H7a5 5 0 010-10 6 6 0 0111.5-1.5A4.5 4.5 0 0118 17z"/>`)
+	return strich(`<path d="M18 17H7a5 5 0 010-10 6 6 0 0111.5-1.5A5.76 5.76 0 0118 17z"/>`)
 }
 
+// WetterNebel und die folgenden acht Niederschlagssymbole nutzen dieselbe Wolkenkonstruktion
+// mit Endpunkt (17,13). Die abschließende Arc zu diesem Punkt hat eine Distanz von etwa 9,
+// benötigt also mindestens Radius 4.5. Der Wert 4.51 ist gewählt, weil:
+// - 9.01 ≤ 2·4.51 = 9.02 (Bogen ist geometrisch valide)
+// - Der Renderer muss nicht mehr nachkorrigieren (Pfad beschreibt exakt, was gezeichnet wird)
+// - Alle neun Symbole werden mit identischen Radien zeichengleich
 func WetterNebel() Icon {
-	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M4 17h16M7 21h13"/>`)
+	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M4 17h16M7 21h13"/>`)
 }
 
 func WetterRegen() Icon {
-	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M8 17v3M12 17v4M16 17v3"/>`)
+	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M8 17v3M12 17v4M16 17v3"/>`)
 }
 
 func WetterSchauer() Icon {
-	return strich(`<path d="M12 5V3M6.5 6.5L5 5M20 13h-1"/><path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M9 17v3M15 17v3"/>`)
+	return strich(`<path d="M12 5V3M6.5 6.5L5 5M20 13h-1"/><path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M9 17v3M15 17v3"/>`)
 }
 
 func WetterSchnee() Icon {
-	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 21h.01M14 17h.01"/>`)
+	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 21h.01M14 17h.01"/>`)
 }
 
 func WetterSchneeschauer() Icon {
-	return strich(`<path d="M12 5V3M6.5 6.5L5 5"/><path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M9 18h.01M13 20h.01M16 18h.01"/>`)
+	return strich(`<path d="M12 5V3M6.5 6.5L5 5"/><path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M9 18h.01M13 20h.01M16 18h.01"/>`)
 }
 
 func WetterGewitter() Icon {
 	// Blitz startet bei y=16, Wolke endet bei y=13. Der Blitz soll unterhalb der Wolke
 	// sichtbar sein, aber innerhalb des viewBox (0-24) bleiben. Endpunkt daher bei y=23
-	// statt y=25.
-	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M13 16l-3 5h4l-3 2"/>`)
+	// statt y=25. Wolke nutzt Radius 4.51 wie die anderen Niederschlagssymbole.
+	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M13 16l-3 5h4l-3 2"/>`)
 }
 
 func WetterHagel() Icon {
-	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M8 17v1M12 17v1M16 17v1M10 20v1M14 20v1"/>`)
+	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A4.51 4.51 0 0117 13z"/><path d="M8 17v1M12 17v1M16 17v1M10 20v1M14 20v1"/>`)
 }
 
 func wettersymbole() map[string]Icon {
