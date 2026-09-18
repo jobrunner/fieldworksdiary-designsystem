@@ -51,17 +51,16 @@
   --accent-hover: #124a1f;
 
   /* Status */
-  /* Es gibt hier bewusst kein eigenes Erfolgstoken mehr. Markengrün
-     (135,5° im HSL-Farbkreis) und das frühere Erfolgsgrün (141,7°) liegen
-     nur 6° auseinander — nebeneinander nicht unterscheidbar. In einem
-     grünen System IST Erfolg die Markenfarbe: --accent-text steht überall
-     dort, wo zuvor das Erfolgstoken stand (siehe .badge-success in
-     base.css, das den Klassennamen behält, aber jetzt --accent-text
-     zeichnet). */
-  /* Das Token für Hinweise ist das vormalige Markenblau (#1e40af) — mit dem
-     Wechsel der Markenfarbe auf Grün frei geworden und nimmt hier dieselbe
-     Rolle ein, die systemBlue in der iOS-App für wertungsfreie Hinweise
-     trägt: eine Aussage, kein Urteil, anders als Warnung oder Fehler. */
+  /* Kein eigenes --success: Markengrün (135,5° im HSL-Farbkreis) und das
+     frühere Erfolgsgrün (141,7°) liegen nur 6° auseinander — nebeneinander
+     nicht unterscheidbar. In einem grünen System IST Erfolg die
+     Markenfarbe: --accent-text steht überall dort, wo zuvor --success
+     stand (siehe .badge-success in base.css, das den Klassennamen behält,
+     aber jetzt --accent-text zeichnet). */
+  /* --info ist das vormalige Markenblau (#1e40af) — mit dem Wechsel der
+     Markenfarbe auf Grün frei geworden und nimmt hier dieselbe Rolle ein,
+     die systemBlue in der iOS-App für wertungsfreie Hinweise trägt: eine
+     Aussage, kein Urteil, anders als --warning oder --error. */
   --info: #1e40af;
   --error: #991b1b;
   --warning: #93390e;

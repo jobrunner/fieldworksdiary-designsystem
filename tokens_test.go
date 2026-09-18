@@ -55,16 +55,23 @@ func textTokenNamen(tokens map[string]string) []string {
 	return namen
 }
 
-// parseThemes zerlegt tokens.css in das helle und das dunkle Thema. Der
-// dunkle Satz steht im @media-Block; alles davor gehört zum hellen.
-// Die Annahme, dass GENAU EIN @media-Block existiert und dieser das dunkle
-// Thema ist, wird in TestGenauEinMediaBlockFuerDunkel gesondert geprüft.
-func parseThemes(t *testing.T) (hell, dunkel map[string]string) {
-	t.Helper()
-	css := string(TokensCSS())
+// parseThemesAusText ist der eigentliche Zerlegungsschritt, unabhängig von
+// tokens.css — parseThemes (für die echten Tests) und
+// TestParseThemesIgnoriertKommentare (für die Kommentarfälle) rufen ihn auf
+// unterschiedlichem CSS-Text auf.
+//
+// Kommentare werden VOR jeder weiteren Auswertung entfernt (removeComments,
+// siehe css_test.go) — sowohl bevor die @media-Grenze per strings.Index
+// bestimmt wird, als auch bevor tokenRe darauf läuft. Ohne das könnte ein
+// Kommentar mit einem eigenen "--token: wert;"-Muster den echten Wert
+// überschreiben (der zuletzt gefundene Treffer gewinnt), oder ein "@media"
+// im Kommentartext die Aufteilung zwischen hellem und dunklem Thema
+// verschieben. TestParseThemesIgnoriertKommentare belegt beide Fälle.
+func parseThemesAusText(css string) (hell, dunkel map[string]string, mediaGefunden bool) {
+	css = removeComments(css)
 	i := strings.Index(css, "@media")
 	if i < 0 {
-		t.Fatal("tokens.css enthält keinen @media-Block für das dunkle Thema")
+		return nil, nil, false
 	}
 	hell = map[string]string{}
 	for _, m := range tokenRe.FindAllStringSubmatch(css[:i], -1) {
@@ -78,7 +85,101 @@ func parseThemes(t *testing.T) (hell, dunkel map[string]string) {
 	for _, m := range tokenRe.FindAllStringSubmatch(css[i:], -1) {
 		dunkel[m[1]] = strings.TrimSpace(m[2])
 	}
+	return hell, dunkel, true
+}
+
+// parseThemes zerlegt tokens.css in das helle und das dunkle Thema. Der
+// dunkle Satz steht im @media-Block; alles davor gehört zum hellen.
+// Die Annahme, dass GENAU EIN @media-Block existiert und dieser das dunkle
+// Thema ist, wird in TestGenauEinMediaBlockFuerDunkel gesondert geprüft.
+func parseThemes(t *testing.T) (hell, dunkel map[string]string) {
+	t.Helper()
+	hell, dunkel, ok := parseThemesAusText(string(TokensCSS()))
+	if !ok {
+		t.Fatal("tokens.css enthält keinen @media-Block für das dunkle Thema")
+	}
 	return hell, dunkel
+}
+
+// TestParseThemesIgnoriertKommentare belegt den Befund: ein Kommentar mit
+// einem eigenen "--token: wert;"-Muster darf den echten Wert weder
+// überschreiben noch vortäuschen, dass er es täte. Geprüft wird die
+// Zerlegung direkt an einem eigenen CSS-Text, nicht an tokens.css selbst —
+// tokens.css bleibt dabei unangetastet und der Test bleibt unabhängig von
+// seinem jeweiligen Inhalt.
+func TestParseThemesIgnoriertKommentare(t *testing.T) {
+	t.Run("Kommentar nach echtem Wert wird nicht übernommen", func(t *testing.T) {
+		// Genau der nachgewiesene Fall: ein Kommentar STEHT NACH der echten
+		// Definition, im selben :root-Block, und nennt selbst einen Wert für
+		// dasselbe Token.
+		css := `:root {
+  --error: #991b1b;
+  /* Fruehrerer Entwurf war --error: #00ff00; zu grell */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --error: #fca5a5;
+  }
+}`
+		hell, dunkel, ok := parseThemesAusText(css)
+		if !ok {
+			t.Fatal("kein @media-Block gefunden")
+		}
+		if hell["--error"] != "#991b1b" {
+			t.Errorf("--error (hell) = %q, erwartet den echten Wert #991b1b — der Kommentarwert #00ff00 hätte ihn überschrieben", hell["--error"])
+		}
+		if dunkel["--error"] != "#fca5a5" {
+			t.Errorf("--error (dunkel) = %q, erwartet #fca5a5", dunkel["--error"])
+		}
+	})
+
+	t.Run("gefährliche Richtung: schlechter echter Wert bleibt trotz gutem Kommentarwert bestehen", func(t *testing.T) {
+		// Die von der Prüfung eigentlich gefürchtete Richtung: der ECHTE
+		// Wert ist schlecht, ein NACHFOLGENDER Kommentar nennt einen guten
+		// Wert desselben Tokens. Bliebe der Kommentarwert maßgeblich, würde
+		// die Kontrastprüfung einen Text prüfen, den niemand ausliefert, und
+		// eine tatsächlich zusagenverletzende Palette für grün erklären.
+		css := `:root {
+  --error: #00ff00;
+  /* besser waere --error: #991b1b; */
+}
+@media (prefers-color-scheme: dark) {
+  :root {}
+}`
+		hell, _, ok := parseThemesAusText(css)
+		if !ok {
+			t.Fatal("kein @media-Block gefunden")
+		}
+		if hell["--error"] != "#00ff00" {
+			t.Errorf("--error (hell) = %q, erwartet den echten (schlechten) Wert #00ff00 — sonst prüfte der Test einen Wert, der nicht ausgeliefert wird", hell["--error"])
+		}
+	})
+
+	t.Run("@media in einem Kommentar verschiebt die Themengrenze nicht", func(t *testing.T) {
+		// Ein "@media" im Kommentartext, VOR dem echten dunklen Block, darf
+		// strings.Index nicht vorzeitig zuschlagen lassen — sonst rechnete
+		// parseThemesAusText einen Teil des hellen Themas dem dunklen zu.
+		css := `:root {
+  --text: #1e293b;
+  /* frueher ohne @media (prefers-color-scheme: dark) Unterstuetzung */
+  --error: #991b1b;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f1f5f9;
+  }
+}`
+		hell, dunkel, ok := parseThemesAusText(css)
+		if !ok {
+			t.Fatal("kein @media-Block gefunden")
+		}
+		if hell["--text"] != "#1e293b" || hell["--error"] != "#991b1b" {
+			t.Errorf("helles Thema unvollständig: %#v", hell)
+		}
+		if dunkel["--text"] != "#f1f5f9" {
+			t.Errorf("--text (dunkel) = %q, erwartet #f1f5f9 — das @media im Kommentar hat die Grenze verschoben", dunkel["--text"])
+		}
+	})
 }
 
 // TestGenauEinMediaBlockFuerDunkel hält die Annahme aus parseThemes fest,
@@ -87,7 +188,9 @@ func parseThemes(t *testing.T) (hell, dunkel map[string]string) {
 // Palette dem dunklen Thema zurechnen und gegen die falschen Flächen
 // prüfen.
 func TestGenauEinMediaBlockFuerDunkel(t *testing.T) {
-	css := string(TokensCSS())
+	// removeComments aus demselben Grund wie in parseThemes: ein "@media" im
+	// Kommentartext darf diese Zählung nicht verfälschen.
+	css := removeComments(string(TokensCSS()))
 	anzahl := strings.Count(css, "@media")
 	if anzahl != 1 {
 		t.Fatalf("tokens.css enthält %d @media-Blöcke, parseThemes setzt genau einen voraus (das dunkle Thema)", anzahl)
