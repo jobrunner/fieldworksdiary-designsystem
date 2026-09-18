@@ -9,11 +9,16 @@
   <body>
     <a class="skip-link" href="#inhalt">Sprunglink (nur bei Fokus sichtbar)</a>
     <main id="inhalt" class="container" tabindex="-1">
-      <h1>Design-System</h1>
-      <p class="muted">
-        Jede Komponente in ihrem Normalzustand. Das Thema folgt der
-        Systemeinstellung — zum Prüfen des dunklen Themas dort umschalten.
-      </p>
+      <header class="ds-kopf">
+        <div class="ds-kopf-titel">
+          <h1>Design-System</h1>
+          <p class="muted">
+            Jede Komponente in ihrem Normalzustand. Das Thema folgt der
+            Systemeinstellung — zum Prüfen des dunklen Themas dort
+            umschalten.
+          </p>
+        </div>
+      </header>
 
       <section class="card">
         <h2 class="card-title">Knöpfe</h2>
@@ -21,7 +26,78 @@
           <button type="button" class="btn">Abfragen</button>
           <button type="button" class="btn btn-secondary">Leeren</button>
           <button type="button" class="btn" disabled>Gesperrt</button>
+          <button type="button" class="btn btn-icon" aria-label="Suchen">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" />
+            </svg>
+          </button>
         </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Symbole</h2>
+        <p>
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M12 2.7l5.3 5.3a7.5 7.5 0 11-10.6 0z" />
+          </svg>
+          Taupunkt
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"
+            />
+          </svg>
+          Temperatur
+          <svg
+            class="icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M9.6 4.6A2 2 0 1111 8H2M12.6 19.4A2 2 0 1014 16H2M17.7 7.7A2.5 2.5 0 1119.5 12H2"
+            />
+          </svg>
+          Wind
+        </p>
+        <p class="muted">
+          Ein Symbol bemisst sich an der Schrift daneben (.icon) und wird
+          über <code>currentColor</code> eingefärbt.
+        </p>
       </section>
 
       <section class="card">
@@ -123,6 +199,15 @@
 
       <p class="sr-only">Dieser Satz ist nur für Screenreader da.</p>
       <p class="muted">Ende der Referenzseite.</p>
+
+      <footer class="ds-fuss">
+        <p class="ds-fuss-verweise">
+          <a href="/designsystem.css">Stylesheet</a>
+          &middot;
+          <a href="#inhalt">Nach oben</a>
+        </p>
+        <p class="ds-fuss-fassung muted">designsystem 0.1.0</p>
+      </footer>
     </main>
   </body>
 </html>
