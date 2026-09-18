@@ -138,7 +138,7 @@ func TestAlleSammelkeineDuplikate(t *testing.T) {
 		bediensymbole(),
 		wettersymbole(),
 		himmelssymbole(),
-		// Aufgabe 5 wird weitere Sammlungen hier eintragen.
+		messwertsymbole(),
 	}
 
 	// Summe der Längen aller Teile

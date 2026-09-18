@@ -441,3 +441,77 @@ thead th {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Seitengerüst --- */
+
+/* Kopf, Inhalt und Fuß teilen sich .container und stehen damit in derselben
+   Spur. In Expertus begann der Kopf zuvor am Fensterrand, während der Inhalt
+   zentriert war — die Seite wirkte zerrissen. */
+
+.ds-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ds-kopf h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  /* --accent-text, nicht --accent: seit der Umstellung auf Grün ist
+     --accent eine Fläche (dunkel in beiden Themen, für weiße Schrift) und
+     als Textfarbe auf dunklem Grund mit 1,91:1 unlesbar. */
+  color: var(--accent-text);
+}
+
+.ds-kopf-titel p {
+  margin: 0.125rem 0 0;
+  font-size: 0.875rem;
+}
+
+.ds-fuss {
+  padding-top: 1rem;
+  margin-top: 2.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.8125rem;
+}
+
+.ds-fuss p {
+  margin: 0;
+}
+
+.ds-fuss-fassung {
+  margin-top: 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Symbole --- */
+
+/* Ein Symbol bemisst sich an der Schrift daneben, nicht an einer festen
+   Pixelzahl: bei 200 % Textgröße wächst es mit (WCAG 1.4.4). */
+.icon {
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+  vertical-align: -0.2em;
+}
+
+/* Im Knopf steht das Symbol neben der Beschriftung. */
+.btn .icon {
+  margin-right: 0.4em;
+}
+
+/* Ein Knopf, der nur ein Symbol trägt, bleibt quadratisch und behält die
+   Mindestgröße für Zielflächen. */
+.btn-icon {
+  width: 2.75rem;
+  padding: 0;
+}
+
+.btn-icon .icon {
+  margin: 0;
+}
