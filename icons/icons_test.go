@@ -72,6 +72,60 @@ func TestIconString(t *testing.T) {
 	}
 }
 
+func TestJedesSymbolFolgtDerBauregel(t *testing.T) {
+	if len(Alle()) == 0 {
+		t.Fatal("Alle() ist leer — dann prüft dieser Test nichts")
+	}
+	for name, icon := range Alle() {
+		s := string(icon)
+		t.Run(name, func(t *testing.T) {
+			for _, pflicht := range []string{
+				`viewBox="0 0 24 24"`,
+				`aria-hidden="true"`,
+				`focusable="false"`,
+				`currentColor`,
+			} {
+				if !contains(s, pflicht) {
+					t.Errorf("%s enthält %q nicht", name, pflicht)
+				}
+			}
+			// Prüfe freistehende width/height nur auf dem SVG-Element selbst
+			// (zwischen <svg und dem ersten >), nicht auf inneren Elementen.
+			svgOpenRe := regexp.MustCompile(`<svg\s+[^>]*?>`)
+			svgOpen := svgOpenRe.FindString(s)
+			if svgOpen != "" {
+				for _, attr := range []string{"width", "height"} {
+					if regexp.MustCompile(`(^|[\s])` + attr + `\s*=`).MatchString(svgOpen) {
+						t.Errorf("%s hat %q auf dem SVG-Element — Größe gehört ins CSS", name, attr)
+					}
+				}
+			}
+			// Farben in Klartext sind überall verboten.
+			for _, farbeVerboten := range []string{`#`, `rgb(`, `hsl(`} {
+				if contains(s, farbeVerboten) {
+					t.Errorf("%s enthält Farbe %q — Farbe kommt aus currentColor", name, farbeVerboten)
+				}
+			}
+			if !contains(s, `<svg`) || !contains(s, `</svg>`) {
+				t.Errorf("%s ist kein vollständiges SVG", name)
+			}
+		})
+	}
+}
+
+func TestAlleEnthaeltDieBediensymbole(t *testing.T) {
+	// Diese Namen sind eine Zusage an die Dienste: sie rufen sie auf.
+	for _, name := range []string{
+		"standort", "chevron-unten", "kalender", "schliessen", "suche",
+		"herunterladen", "kopieren", "haken", "warnung", "information",
+		"fehler", "menue",
+	} {
+		if _, da := Alle()[name]; !da {
+			t.Errorf("Alle() kennt %q nicht", name)
+		}
+	}
+}
+
 func contains(h, n string) bool {
 	return len(n) <= len(h) && indexOf(h, n) >= 0
 }
