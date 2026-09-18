@@ -345,6 +345,15 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 // Demo-Seite ist laut Entwurf für die Mehrzahl der Komponenten die einzige
 // Prüfstelle, und eine Seite, die ihr eigenes Stylesheet flickt, gäbe eine
 // gute Abnahme für ein tatsächlich kaputtes designsystem.css.
+//
+// Dieselbe Sorge gilt für das Skript: ein <script>, das die
+// Combobox-Logik NACHBAUT statt sie über /designsystem.js einzubinden,
+// würde ein kaputtes JS() ebenso lokal überdecken, wie es ein <style>-Block
+// für das CSS täte. Deshalb erweitert um die Prüfung, dass kein
+// <script>-Block eine eigene Fassung von mountCombobox definiert — ein
+// kurzes Inline-Skript, das die echte Fassung importiert und nur die
+// Beispieldaten der Referenzseite liefert, bleibt davon unberührt, denn es
+// baut nichts nach, sondern ruft nur auf.
 func TestIndexBindetStylesheetEinUndSchummeltNicht(t *testing.T) {
 	html := string(indexHTML)
 	if !strings.Contains(html, `<link rel="stylesheet" href="/designsystem.css" />`) &&
@@ -353,6 +362,13 @@ func TestIndexBindetStylesheetEinUndSchummeltNicht(t *testing.T) {
 	}
 	if strings.Contains(html, "<style") {
 		t.Error("demo/index.html enthält einen eigenen <style>-Block — das würde ein kaputtes designsystem.css lokal überdecken")
+	}
+	if strings.Contains(html, "function mountCombobox") {
+		t.Error("demo/index.html definiert mountCombobox selbst statt sie über /designsystem.js einzubinden — das würde ein kaputtes JS() lokal überdecken")
+	}
+	if !strings.Contains(html, `import { mountCombobox } from "/designsystem.js"`) &&
+		!strings.Contains(html, `import { mountCombobox } from '/designsystem.js'`) {
+		t.Error(`demo/index.html bindet mountCombobox nicht über einen import von "/designsystem.js" ein`)
 	}
 }
 
@@ -386,6 +402,7 @@ func TestHandlerLiefertSeiteUndCSS(t *testing.T) {
 	}{
 		{"/", "text/html; charset=utf-8", "<!doctype html>"},
 		{"/designsystem.css", "text/css; charset=utf-8", "--control-line:"},
+		{"/designsystem.js", "text/javascript; charset=utf-8", "export function mountCombobox"},
 	} {
 		res, err := http.Get(srv.URL + f.pfad)
 		if err != nil {

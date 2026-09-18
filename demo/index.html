@@ -197,6 +197,62 @@
         <p class="muted">Gedämpfter Nebentext.</p>
       </section>
 
+      <section class="card">
+        <h2 class="card-title">Akkordeon</h2>
+        <details class="akkordeon">
+          <summary>
+            <span>Optionen</span>
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </summary>
+          <div class="akkordeon-inhalt">
+            <p>
+              Aufklappbarer Inhalt über das native
+              <code>&lt;details&gt;</code>/<code>&lt;summary&gt;</code>-Paar
+              — tastaturbedienbar und von Screenreadern richtig angesagt,
+              ohne eigenen Tastatur-Code.
+            </p>
+          </div>
+        </details>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Combobox mit Vorschlagsliste</h2>
+        <div class="form-group combobox">
+          <label for="d-combobox">Art</label>
+          <input
+            type="text"
+            id="d-combobox"
+            role="combobox"
+            aria-expanded="false"
+            aria-autocomplete="list"
+            aria-controls="d-combobox-liste"
+            autocomplete="off"
+            placeholder="Tippen, z. B. „Wiesen“"
+          />
+          <ul
+            id="d-combobox-liste"
+            class="combobox-liste"
+            role="listbox"
+            hidden
+          ></ul>
+        </div>
+        <p class="muted" id="d-combobox-ergebnis">
+          Noch keine Auswahl getroffen.
+        </p>
+      </section>
+
       <p class="sr-only">Dieser Satz ist nur für Screenreader da.</p>
       <p class="muted">Ende der Referenzseite.</p>
 
@@ -209,5 +265,46 @@
         <p class="ds-fuss-fassung muted">designsystem 0.1.0</p>
       </footer>
     </main>
+
+    <script type="module">
+      // Bindet die echte Modul-Logik über die Route ein, statt sie hier
+      // nachzubauen — siehe die Begründung in demo.go bei /designsystem.js.
+      // Fachlich bleibt nur die Herkunft der Vorschläge: eine feste Liste
+      // ohne Netzzugriff, wie es die Referenzseite für sich verlangt.
+      import { mountCombobox } from "/designsystem.js";
+
+      const arten = [
+        "Wiesen-Fuchsschwanz",
+        "Wiesen-Kerbel",
+        "Wiesen-Schaumkraut",
+        "Wiesen-Bärenklau",
+        "Wald-Erdbeere",
+        "Wald-Ziest",
+        "Wald-Sauerklee",
+        "Acker-Schachtelhalm",
+        "Acker-Winde",
+        "Echtes Johanniskraut",
+      ];
+
+      const ergebnis = document.getElementById("d-combobox-ergebnis");
+
+      mountCombobox({
+        input: document.getElementById("d-combobox"),
+        listbox: document.getElementById("d-combobox-liste"),
+        suggest: async (query) => {
+          const q = query.trim().toLowerCase();
+          if (!q) return [];
+          return arten
+            .filter((name) => name.toLowerCase().includes(q))
+            .map((name, i) => ({ id: String(i), text: name }));
+        },
+        onPick: (eintrag) => {
+          ergebnis.textContent =
+            eintrag.id === null
+              ? `Freitext übernommen: „${eintrag.text}“`
+              : `Ausgewählt: „${eintrag.text}“`;
+        },
+      });
+    </script>
   </body>
 </html>

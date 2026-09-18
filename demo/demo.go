@@ -26,6 +26,17 @@ func Handler() http.Handler {
 		w.Header().Set("Content-Type", "text/css; charset=utf-8")
 		w.Write(designsystem.CSS())
 	})
+	// Eigene Route statt eines eingebetteten <script>-Blocks in index.html:
+	// aus demselben Grund, aus dem designsystem.css nicht als <style>
+	// eingebettet wird. Ein Skript, dessen Verhalten direkt in der
+	// Referenzseite stünde, würde ein kaputtes JS() lokal überdecken — die
+	// Demo bindet die Combobox-Logik deshalb als ES-Modul über diese Route
+	// ein und wickelt nur die zehn erfundenen Beispieleinträge in einem
+	// kurzen Inline-Skript, das JS() importiert statt es nachzubauen.
+	mux.HandleFunc("/designsystem.js", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Write(designsystem.JS())
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
