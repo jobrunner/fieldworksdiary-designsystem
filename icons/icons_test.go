@@ -136,7 +136,8 @@ func TestAlleSammelkeineDuplikate(t *testing.T) {
 	// Die Teil-Sammlungen — Reihenfolge folgt Alle()
 	teile := []map[string]Icon{
 		bediensymbole(),
-		// Aufgaben 3-5 werden weitere Sammlungen hier eintragen.
+		wettersymbole(),
+		// Aufgaben 4-5 werden weitere Sammlungen hier eintragen.
 	}
 
 	// Summe der Längen aller Teile
