@@ -29,12 +29,40 @@
      aria-disabled, Mauszeiger und fehlende Reaktion. */
   --text-disabled: #475569;
 
-  /* Akzent — trägt weiße Schrift auf der Fläche des primären Knopfes */
-  --accent: #1e40af;
-  --accent-hover: #1e3a8a;
+  /* Akzent — die Markenfarbe stammt aus der iOS-App (fieldworksdiary-ng),
+     die Grün als Markenfarbe führt; Web und App sollen zusammenpassen.
+     iOS setzt die Markenfarbe als FLÄCHE (Knopf, Kopfbereich) mit weißer
+     Schrift, das Web nutzt sie zusätzlich als TEXTFARBE (Link, ausgewählter
+     Reiter). Ein einziger Wert kann beide Rollen nicht tragen: das helle
+     Markengrün, das im dunklen Thema als Text lesbar wäre (#6ECB86), trägt
+     weiße Schrift nur mit 1.99:1 — weit unter den geforderten 7:1. Deshalb
+     zwei Token mit getrennter Rolle:
+       --accent      Fläche. Dunkel genug für weiße Schrift, deshalb in
+                      BEIDEM Thema derselbe Wert — es gibt keine "hellere"
+                      Markenfarbe, die als Fläche taugt.
+       --accent-text Textfarbe. Themenabhängig wie jede andere Textfarbe.
+     Die iOS-Werte selbst erfüllen die 7:1-Zusage dieses Moduls nicht;
+     --accent und --accent-hover sind deshalb minimal nachgezogene Werte
+     (die iOS-App übernimmt sie parallel), --accent-text im dunklen Thema
+     ist ein eigener, vom Markenwert leicht abgesetzter Ton. */
+  --accent: #186029;
+  --accent-on: #ffffff;
+  --accent-text: #186029;
+  --accent-hover: #124a1f;
 
   /* Status */
-  --success: #146330;
+  /* Es gibt hier bewusst kein eigenes Erfolgstoken mehr. Markengrün
+     (135,5° im HSL-Farbkreis) und das frühere Erfolgsgrün (141,7°) liegen
+     nur 6° auseinander — nebeneinander nicht unterscheidbar. In einem
+     grünen System IST Erfolg die Markenfarbe: --accent-text steht überall
+     dort, wo zuvor das Erfolgstoken stand (siehe .badge-success in
+     base.css, das den Klassennamen behält, aber jetzt --accent-text
+     zeichnet). */
+  /* Das Token für Hinweise ist das vormalige Markenblau (#1e40af) — mit dem
+     Wechsel der Markenfarbe auf Grün frei geworden und nimmt hier dieselbe
+     Rolle ein, die systemBlue in der iOS-App für wertungsfreie Hinweise
+     trägt: eine Aussage, kein Urteil, anders als Warnung oder Fehler. */
+  --info: #1e40af;
   --error: #991b1b;
   --warning: #93390e;
 
@@ -66,12 +94,14 @@
     --text-muted: #b4c0ce;
     --text-disabled: #b4c0ce;
 
-    /* Im dunklen Thema ist der Akzent eine Textfarbe, keine Fläche:
-       ein Knopf bekommt hier dunkle Schrift auf hellem Blau. */
-    --accent: #93c5fd;
-    --accent-hover: #bfdbfe;
+    /* --accent, --accent-on und --accent-hover bleiben unverändert: die
+       Fläche des primären Knopfes ist in beiden Themen derselbe dunkle
+       Markenton, siehe Begründung im hellen Thema oben. Nur die TEXTFARBE
+       zieht im dunklen Thema nach — --accent-text wird hier heller, sonst
+       stünde das dunkle Markengrün als Text auf dunklem Grund (1.91:1). */
+    --accent-text: #6ecb86;
 
-    --success: #86efac;
+    --info: #93c5fd;
     --error: #fca5a5;
     --warning: #fcd34d;
 

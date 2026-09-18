@@ -15,6 +15,11 @@ var tokenRe = regexp.MustCompile(`(--[a-z-]+):\s*([^;]+);`)
 // andere Token in tokens.css — auch ein künftig hinzugefügtes — muss diese
 // Pflicht erfüllen. Ein neues Token kostet damit eine bewusste Aufnahme in
 // diese Liste statt stillschweigend ungeprüft zu bleiben.
+//
+// Diese Liste ist die Gefahrenstelle des Moduls: jedes hier eingetragene
+// Token entgeht der allgemeinen Prüfung. Deshalb steht hinter jedem Eintrag
+// ein Verweis auf die Prüfung, die es STATTDESSEN abdeckt — ein Eintrag ohne
+// eigene gezielte Prüfung wäre schlicht ungeprüft.
 var keineTextfarbe = map[string]bool{
 	"--bg":           true,
 	"--card":         true,
@@ -25,7 +30,16 @@ var keineTextfarbe = map[string]bool{
 	"--radius-sm":    true,
 	"--font":         true,
 	"--font-mono":    true,
-	"--accent-hover": true, // Knopffläche, eigene Prüfung siehe TestKnopfbeschriftungAufAkzent
+	// --accent und --accent-hover sind Flächen, keine Textfarben: der
+	// primäre Knopf trägt --accent-on darauf, nicht --card. --accent als
+	// Text gegen dunklen Grund gelesen erreicht nur 1.91:1 und würde diesen
+	// Test zu Recht brechen. Eigene Prüfung: TestKnopfbeschriftungAufAkzent
+	// (--accent-on auf --accent UND --accent-hover, beide Themen).
+	"--accent":       true,
+	"--accent-hover": true,
+	// --accent-on ist Text auf der Akzentfläche, nicht auf --bg/--card —
+	// dieselbe TestKnopfbeschriftungAufAkzent deckt es ab.
+	"--accent-on": true,
 }
 
 // textTokenNamen liefert die Namen aller Token in einem Themen-Satz, die
@@ -154,9 +168,15 @@ func TestControlLineErreicht3zu1(t *testing.T) {
 
 // TestKnopfbeschriftungAufAkzent prüft die Knopfbeschriftung gegen ihre
 // tatsächliche Fläche in beiden Zuständen und beiden Themen. base.css setzt
-// die Beschriftung auf var(--card) (nicht auf Weiß) — dieser Test behauptet
-// deshalb dasselbe wie das CSS, statt einen eigenen, davon abweichenden
-// Literalwert zu prüfen.
+// die Beschriftung auf var(--accent-on) (nicht auf --card) — dieser Test
+// behauptet deshalb dasselbe wie das CSS, statt einen eigenen, davon
+// abweichenden Literalwert zu prüfen. --card taugt hier nicht mehr: --accent
+// ist als Fläche in beiden Themen derselbe dunkle Markenton, --card wäre im
+// dunklen Thema dunkler Text auf dunkler Fläche.
+//
+// Dieser Test ist die gezielte Prüfung, die --accent, --accent-hover und
+// --accent-on in tokens_test.go von TestAlleTextfarbenErreichenAAA ausnimmt
+// (siehe keineTextfarbe) — ohne ihn wären alle drei schlicht ungeprüft.
 func TestKnopfbeschriftungAufAkzent(t *testing.T) {
 	hell, dunkel := parseThemes(t)
 	for _, c := range []struct {
@@ -164,7 +184,7 @@ func TestKnopfbeschriftungAufAkzent(t *testing.T) {
 		tokens map[string]string
 	}{{"hell", hell}, {"dunkel", dunkel}} {
 		for _, flaeche := range []string{"--accent", "--accent-hover"} {
-			pruefe(t, c.thema, c.tokens, "--card", flaeche, 7.0)
+			pruefe(t, c.thema, c.tokens, "--accent-on", flaeche, 7.0)
 		}
 	}
 }
