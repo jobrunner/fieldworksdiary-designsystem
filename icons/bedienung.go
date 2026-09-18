@@ -80,7 +80,7 @@ func bediensymbole() map[string]Icon {
 // ungeprüft und ungezeigt bleibt.
 func Alle() map[string]Icon {
 	out := map[string]Icon{}
-	for _, teil := range []map[string]Icon{bediensymbole(), wettersymbole()} {
+	for _, teil := range []map[string]Icon{bediensymbole(), wettersymbole(), himmelssymbole()} {
 		for k, v := range teil {
 			out[k] = v
 		}
