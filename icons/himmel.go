@@ -17,9 +17,19 @@ package icons
 //   - rx=0 (eine gerade Linie statt Arc): die Trennlinie ist der Durchmesser
 //     selbst — das ist bei den Vierteln richtig, denn dort steht der
 //     Betrachter exakt seitlich zur Licht-Schatten-Grenze der Kugel.
-//   - rx=6: die Trennlinie wölbt sich — bei Sichel und Gibbous ist sie nie
-//     eine Gerade, weil man die gekrümmte Kugelfläche schräg sieht.
+//   - rx=4,5 bzw. rx=6: die Trennlinie wölbt sich — bei Sichel und Gibbous
+//     ist sie nie eine Gerade, weil man die gekrümmte Kugelfläche schräg
+//     sieht. Der Radius bestimmt dabei den beleuchteten Flächenanteil (siehe
+//     Fix-Runde 1 unten).
 //   - rx=9: die Trennlinie fällt auf den Kreisumfang — Voll- bzw. Neumond.
+//
+// Flächenanteil einer Sichel/Gibbous-Form in Abhängigkeit von rx=r (bei
+// festem ry=9, Kreisradius 9): die Fläche zwischen dem äußeren Halbkreis
+// und der inneren Ellipsen-Arc ist eine Integration von
+// (9-r)·sqrt(1-((y-12)/9)²) über y von 3 bis 21, das ergibt 9(9-r)(π/2).
+// Geteilt durch die Kreisfläche 81π bleibt der einfache Bruch (9-r)/18 für
+// die Sichel bzw. 0,5+r/18 für Gibbous (siehe Fix-Runde 1 im Bericht für
+// die Herleitung und die Kontrolle per Rasterung).
 //
 // Der Plan hatte für Sichel und Gibbous zwei Radien "6 6" verwendet
 // (rx=ry=6). Das unterschreitet den nötigen Radius: Start- und Endpunkt der
@@ -51,11 +61,16 @@ func MondNeu() Icon {
 	return strich(`<circle cx="12" cy="12" r="9"/>`)
 }
 
-// MondZunehmendeSichel — schmaler beleuchteter Streifen am rechten Rand:
-// die Fläche zwischen dem äußeren rechten Halbkreis (rx=9) und einer
-// flacheren rechten Wölbung (rx=6) weiter innen.
+// MondZunehmendeSichel — beleuchteter Streifen am rechten Rand: die Fläche
+// zwischen dem äußeren rechten Halbkreis (rx=9) und einer rechten Wölbung
+// weiter innen.
+//
+// Fix-Runde 1: rx=6 (≈17 % Flächenanteil) war bei 24 px kaum von Neumond zu
+// unterscheiden und ließ die Seitenlage nicht erkennen. Mit rx=4,5 ergibt
+// die Formel (9-r)/18 = 4,5/18 = 25 % — deutlich mehr Fläche, aber klar
+// unter dem Viertel (50 %), wie gefordert.
 func MondZunehmendeSichel() Icon {
-	return flaeche(`<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3 A9 9 0 0 1 12 21 A6 9 0 0 0 12 3 Z"/>`)
+	return flaeche(`<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3 A9 9 0 0 1 12 21 A4.5 9 0 0 0 12 3 Z"/>`)
 }
 
 // MondErstesViertel — rechte Hälfte beleuchtet, Trennlinie ist der
@@ -89,10 +104,10 @@ func MondLetztesViertel() Icon {
 	return flaeche(`<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3 A9 9 0 0 0 12 21 Z"/>`)
 }
 
-// MondAbnehmendeSichel — Spiegelbild von MondZunehmendeSichel: schmaler
-// beleuchteter Streifen am linken Rand.
+// MondAbnehmendeSichel — Spiegelbild von MondZunehmendeSichel: beleuchteter
+// Streifen am linken Rand, gleiches rx=4,5 wie dort (siehe Fix-Runde 1).
 func MondAbnehmendeSichel() Icon {
-	return flaeche(`<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3 A9 9 0 0 0 12 21 A6 9 0 0 1 12 3 Z"/>`)
+	return flaeche(`<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 3 A9 9 0 0 0 12 21 A4.5 9 0 0 1 12 3 Z"/>`)
 }
 
 // SonnenAufgang — Horizont, Sonnenhalbkreis, vier Strahlen und ein nach oben
