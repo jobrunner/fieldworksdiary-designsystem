@@ -13,7 +13,10 @@ func WetterKlarNacht() Icon {
 }
 
 func WetterLeichtBewoelktTag() Icon {
-	return strich(`<path d="M12 4V2M5.6 5.6L4.2 4.2M4 12H2M18.4 5.6l1.4-1.4"/><path d="M8.5 12a3.5 3.5 0 015.9-2.5"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 20z"/>`)
+	// Wolke sitzt höher als in Niederschlagssymbolen (y=12-20 statt y=5-13), um Platz
+	// für die Sonne oben zu haben. Die letzte Arc nutzt Radius 5 statt 3.5, weil die
+	// Distanz von (16.5,11) zu (17,20) etwa 9 ist — größer als 2*3.5=7.
+	return strich(`<path d="M12 4V2M5.6 5.6L4.2 4.2M4 12H2M18.4 5.6l1.4-1.4"/><path d="M8.5 12a3.5 3.5 0 015.9-2.5"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A5 5 0 0117 20z"/>`)
 }
 
 func WetterLeichtBewoelktNacht() Icon {
@@ -21,7 +24,10 @@ func WetterLeichtBewoelktNacht() Icon {
 	// und versetzt). Großer Bogen (Radius 4) von (10,6) zu (7,2), dann kleiner Bogen
 	// (Radius 3) zurück zu (10,6). Das Fehlen eines z am Ende des ersten Bogens ist
 	// beabsichtigt — die beiden Bögen sind nahtlos verbunden.
-	return strich(`<path d="M10 6A4 4 0 1107 2A3 3 0 0010 6z"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 20z"/>`)
+	// Wolke sitzt höher als in Niederschlagssymbolen (y=12-20 statt y=5-13), um Platz
+	// für den Mond oben zu haben. Die letzte Arc nutzt Radius 5 statt 3.5, weil die
+	// Distanz von (16.5,11) zu (17,20) etwa 9 ist — größer als 2*3.5=7.
+	return strich(`<path d="M10 6A4 4 0 1107 2A3 3 0 0010 6z"/><path d="M17 20H7a4 4 0 010-8 5 5 0 019.5-1A5 5 0 0117 20z"/>`)
 }
 
 // WetterBewoelkt nutzt eine größere Wolke (a5 5 statt a4 4), weil dieses Symbol
@@ -53,7 +59,10 @@ func WetterSchneeschauer() Icon {
 }
 
 func WetterGewitter() Icon {
-	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M13 16l-3 5h4l-3 4"/>`)
+	// Blitz startet bei y=16, Wolke endet bei y=13. Der Blitz soll unterhalb der Wolke
+	// sichtbar sein, aber innerhalb des viewBox (0-24) bleiben. Endpunkt daher bei y=23
+	// statt y=25.
+	return strich(`<path d="M17 13H7a4 4 0 010-8 5 5 0 019.5-1A3.5 3.5 0 0117 13z"/><path d="M13 16l-3 5h4l-3 2"/>`)
 }
 
 func WetterHagel() Icon {
