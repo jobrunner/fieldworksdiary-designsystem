@@ -489,6 +489,109 @@ thead th {
   font-variant-numeric: tabular-nums;
 }
 
+/* --- Akkordeon --- */
+
+/* <details>/<summary> bringen Auf- und Zuklappen, Tastaturbedienung und die
+   Screenreader-Ansage bereits mit — Ortus baut das für Quellen und Optionen
+   von Hand nach (role="button", tabindex, aria-expanded, eigener
+   Tastatur-Code), Tempus ein drittes Mal fürs Multiselect. Das Modul liefert
+   nur noch die Gestaltung, nicht mehr das Verhalten. */
+.akkordeon {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+  /* Kein box-shadow wie bei .card: ein Akkordeon reiht sich meist mehrfach
+     untereinander, ein Schatten pro Zeile wirkte dort unruhig. */
+}
+
+.akkordeon > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--bg);
+  border-radius: var(--radius);
+  /* list-style entfernt das Vorgabedreieck in Firefox, die
+     ::-webkit-details-marker-Regel dasselbe in Chrome/Safari — ohne beides
+     stünde neben dem Chevron aus dem Symbolpaket ein zweites, browsereigenes
+     Dreieck. */
+  list-style: none;
+}
+
+.akkordeon > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Der Fokusring des Browsers greift auf <summary> zuverlässig; eine eigene
+   Regel wie bei :focus-visible oben ist hier nicht nötig, weil die
+   allgemeine Regel bereits genau dieses Element erfasst — sie ist nicht auf
+   bestimmte Elemente eingeschränkt. */
+
+/* Der Chevron dreht sich beim Öffnen. transition ist hier lokal nötig, weil
+   erst [open] den Zustand liefert, gegen den animiert wird; die
+   @media(prefers-reduced-motion: reduce)-Regel weiter unten (*, *::before,
+   *::after) greift bereits auch hier — sie ist ohne Einschränkung auf
+   Klassen formuliert und drosselt jede transition-duration im Dokument,
+   auch diese. */
+.akkordeon[open] > summary .icon {
+  transform: rotate(180deg);
+  transition: transform 0.2s;
+}
+
+.akkordeon-inhalt {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+/* --- Combobox --- */
+
+/* Positionierungsrahmen für Eingabefeld und Vorschlagsliste — die Liste
+   hängt sich absolut daran auf, ohne selbst den Textfluss zu verschieben. */
+.combobox {
+  position: relative;
+}
+
+.combobox-liste {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 10;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  list-style: none;
+}
+
+.combobox-liste .option {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+/* Der hervorgehobene Zustand hängt an aria-selected, nicht an einer eigenen
+   Klasse: Darstellung und Ansage teilen sich damit dieselbe Quelle und
+   können nicht auseinanderlaufen — ein Skript, das aria-selected vergisst,
+   zeigt auch optisch keine Hervorhebung mehr statt eine unbemerkt falsche. */
+.combobox-liste .option[aria-selected="true"] {
+  /* --accent-on auf --accent, dieselbe Paarung wie .btn: eine Fläche, die
+     weiße Schrift trägt, keine Textfarbe auf einer neutralen Fläche. */
+  color: var(--accent-on);
+  background: var(--accent);
+}
+
 /* --- Symbole --- */
 
 /* Ein Symbol bemisst sich an der Schrift daneben, nicht an einer festen
