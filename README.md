@@ -32,6 +32,16 @@ Marken, Tabellen, Zustände.
 Fachliche Komponenten gehören nicht hierher: die Wetterkarte bleibt in Tempus,
 die Quellenliste in Ortus.
 
+## Herkunft der Palette
+
+Die Akzentfarbe ist Grün und stammt aus der iOS-App `fieldworksdiary-ng`, die
+Grün als Markenfarbe führt — Web und App sollen zusammenpassen. Web und App
+weisen ihr unterschiedliche Rollen zu (App: Fläche mit weißer Schrift; Web:
+zusätzlich Textfarbe für Links, Reiter und Erfolg), deshalb gibt es zwei
+Token: `--accent` (Fläche, in beiden Themen gleich) und `--accent-text`
+(Textfarbe, themenabhängig). Details und die gemessenen Kontraste stehen in
+[docs/design.md](docs/design.md#herkunft-der-palette).
+
 ## Zusagen
 
 Alle Textfarben erreichen 7:1 gegen Seitenhintergrund und Kartenfläche, in

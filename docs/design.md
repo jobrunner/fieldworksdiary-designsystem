@@ -95,6 +95,35 @@ es `--bg`, im dunklen `--card`. `contrast_test.go` liest die Werte aus
 `css/tokens.css` und prüft beide Flächen; es ist die verbindliche Quelle, die
 folgenden Tabellen geben sie wieder.
 
+### Herkunft der Palette
+
+Die Akzentfarbe ist seit dem ursprünglichen Entwurf blau (`#1e40af`). Die
+zugehörige iOS-App (`fieldworksdiary-ng`) führt seit jeher Grün als
+Markenfarbe; Web und App sollen zusammenpassen, deshalb wechselt das Modul
+auf Grün.
+
+Web und App weisen der Markenfarbe unterschiedliche Rollen zu: die App setzt
+sie als **Fläche** (Knopf, Kopfbereich) mit weißer Schrift darauf, das Web
+nutzt sie zusätzlich als **Textfarbe** (Link, ausgewählter Reiter, Erfolg).
+Ein einziger Wert kann beide Rollen nicht tragen — ein Grün, das im dunklen
+Thema als Text lesbar wäre, trägt weiße Schrift nur mit rund 2:1. Die Palette
+teilt die Rolle deshalb auf zwei Token auf: `--accent` (Fläche, dunkel genug
+für weiße Schrift, in beiden Themen derselbe Wert) und `--accent-text`
+(Textfarbe, themenabhängig wie jede andere Textfarbe).
+
+Die iOS-Werte selbst erfüllen die 7:1-Zusage dieses Moduls nicht; `--accent`
+und `--accent-hover` sind deshalb minimal von den App-Werten nachgezogene
+Werte — die iOS-App übernimmt sie im Gegenzug, damit beide Plattformen
+exakt dieselbe Markenfarbe zeigen.
+
+Mit dem Wechsel auf Grün entfällt `--success` als eigenes Token: das
+Markengrün (135,5° im HSL-Farbkreis) und das frühere Erfolgsgrün (141,7°)
+liegen nur 6° auseinander und wären nebeneinander nicht unterscheidbar. In
+einem grünen System ist Erfolg die Markenfarbe — `--accent-text` steht
+überall dort, wo zuvor `--success` stand. Das frei gewordene vormalige
+Markenblau lebt als `--info` weiter, in derselben Rolle, die `systemBlue` in
+der iOS-App für wertungsfreie Hinweise trägt.
+
 ### Hell
 
 | Token | Wert | gegen `--bg` | gegen `--card` | Anforderung |
@@ -103,13 +132,24 @@ folgenden Tabellen geben sie wieder.
 | `--card` | `#ffffff` | — | — | Kartenfläche |
 | `--text` | `#1e293b` | 13.98:1 | 14.63:1 | ≥ 7:1 |
 | `--text-muted` | `#475569` | 7.24:1 | 7.58:1 | ≥ 7:1 |
-| `--accent` | `#1e40af` | 8.72:1 (weißer Text darauf) | — | ≥ 7:1 |
-| `--success` | `#146330` | 7.02:1 | 7.35:1 | ≥ 7:1 |
+| `--accent` (Fläche) | `#186029` | 7.31:1 (als Text gelesen) | 7.65:1 (als Text gelesen) | eigene Prüfung, siehe unten |
+| `--accent-on` (Text auf `--accent`) | `#ffffff` | — | — | 7.65:1 auf `--accent`, ≥ 7:1 |
+| `--accent-text` | `#186029` | 7.31:1 | 7.65:1 | ≥ 7:1 |
+| `--accent-hover` (Fläche) | `#124a1f` | — | — | 10.37:1 unter `--accent-on`, ≥ 7:1 |
+| `--info` | `#1e40af` | 8.34:1 | 8.72:1 | ≥ 7:1 |
 | `--error` | `#991b1b` | 7.94:1 | 8.31:1 | ≥ 7:1 |
 | `--warning` | `#93390e` | 7.09:1 | 7.41:1 | ≥ 7:1 |
 | `--text-disabled` | `#475569` | 7.24:1 | 7.58:1 | ≥ 7:1 |
 | `--control-line` | `#767676` | 4.34:1 | 4.54:1 | ≥ 3:1 |
 | `--border` | `#e2e8f0` | dekorativ | dekorativ | ausgenommen |
+
+`--accent` und `--accent-hover` sind Flächen, keine Textfarben — als Text
+gegen `--bg`/`--card` gelesen bestünden sie im hellen Thema zwar knapp
+(7.31:1 / 7.65:1 für `--accent`), im dunklen Thema aber nicht (siehe unten).
+Sie werden deshalb nicht gegen die Seitenflächen geprüft, sondern dagegen,
+was tatsächlich auf ihnen steht: `--accent-on` erreicht 7.65:1 auf `--accent`
+und 10.37:1 auf `--accent-hover`, in beiden Themen gleich, weil beide Werte
+themenunabhängig sind.
 
 `--text-disabled` stammt aus Tempus und fehlt Ortus — ein Beispiel für die
 Drift, die das gemeinsame Modul beendet. Es erhält denselben Wert wie
@@ -125,30 +165,35 @@ Cursor.
 | `--card` | `#1e293b` | — | — | Kartenfläche |
 | `--text` | `#f1f5f9` | 13.35:1 | 16.30:1 | ≥ 7:1 |
 | `--text-muted` | `#b4c0ce` | 7.92:1 | 9.67:1 | ≥ 7:1 |
-| `--accent` | `#93c5fd` | 8.11:1 | 9.90:1 | ≥ 7:1 |
-| `--success` | `#86efac` | 10.42:1 | 12.71:1 | ≥ 7:1 |
+| `--accent` (Fläche, unverändert) | `#186029` | 1.91:1 (als Text gelesen) | 2.33:1 (als Text gelesen) | eigene Prüfung, siehe oben |
+| `--accent-on` (Text auf `--accent`, unverändert) | `#ffffff` | — | — | 7.65:1 auf `--accent`, ≥ 7:1 |
+| `--accent-text` | `#6ecb86` | 7.35:1 | 8.97:1 | ≥ 7:1 |
+| `--accent-hover` (Fläche, unverändert) | `#124a1f` | — | — | 10.37:1 unter `--accent-on`, ≥ 7:1 |
+| `--info` | `#93c5fd` | 8.11:1 | 9.90:1 | ≥ 7:1 |
 | `--error` | `#fca5a5` | 7.71:1 | 9.41:1 | ≥ 7:1 |
 | `--warning` | `#fcd34d` | 10.15:1 | 12.38:1 | ≥ 7:1 |
 | `--text-disabled` | `#b4c0ce` | 7.92:1 | 9.67:1 | ≥ 7:1 |
 | `--control-line` | `#8695a8` | 4.79:1 | 5.85:1 | ≥ 3:1 |
 | `--border` | `#334155` | dekorativ | dekorativ | ausgenommen |
 
-Drei Konsequenzen sind erwähnenswert:
+`--accent` bleibt im dunklen Thema derselbe Wert wie im hellen — als Text
+gegen dunklen Grund gelesen erreicht es hier nur 1.91:1 bzw. 2.33:1, weit
+unter 7:1. Das ist beabsichtigt: `--accent` ist eine Fläche, keine Textfarbe
+(siehe Herkunft der Palette unten), geprüft wird sie gegen `--accent-on`,
+nicht gegen `--bg`/`--card`.
+
+Zwei Konsequenzen aus dem vorigen (blauen) System sind weiterhin
+erwähnenswert:
 
 **Sekundärtext wird dunkler.** Ortus' und Tempus' `#64748b` (4.55:1) weicht
 `#475569` (7.6:1). Das ist die sichtbarste Änderung im hellen Thema.
 
-**Das Primärblau wird satter.** `#2563eb` trägt weißen Text nur mit 5.2:1;
-`#1e40af` erreicht 8.72:1. Buttons und Links bleiben blau, wirken aber
-kräftiger.
-
-**Grün und Orange mussten nachgezogen werden.** Ein erster Entwurf setzte
-`--success` auf `#166534` und `--warning` auf `#92400e`. Beide erreichen 7:1
-gegen die weiße Karte, verfehlen es aber gegen den Seitenhintergrund (6.81:1
-und 6.78:1) — ein Fall, den nur die Prüfung gegen beide Flächen findet. Die
-jetzigen Werte erfüllen beide. Nebenwirkung: `--warning` rückt im Farbton
-etwas näher an `--error` heran (19.4° Abstand statt 22.7°); stünden beide je
-unmittelbar nebeneinander, wäre das im Auge zu behalten.
+**Grün und Orange mussten nachgezogen werden.** Ein erster Entwurf des
+ursprünglichen Systems setzte das damalige Erfolgsgrün auf `#166534` und
+`--warning` auf `#92400e`. Beide erreichten 7:1 gegen die weiße Karte,
+verfehlten es aber gegen den Seitenhintergrund (6.81:1 und 6.78:1) — ein
+Fall, den nur die Prüfung gegen beide Flächen findet. Die jetzigen Werte für
+`--warning` erfüllen beide.
 
 **Karten brauchen im Dunkeln einen Rand.** `--card: #1e293b` steht gegen
 `--bg: #0f172a` nur bei 1.22:1. Der `box-shadow`, der die Karte im hellen
@@ -275,10 +320,10 @@ Aufgenommen wird, was mindestens zwei Dienste brauchen:
 - `.btn`, `.btn-secondary`, `.btn-row`, Zustände `hover`/`disabled`/`focus-visible`
 - `.card`, `.card-title`
 - `.tabs`, `.tab` mit `aria-selected`-Zustand
-- `.badge` samt Erfolgs- und Fehlervariante
+- `.badge` samt Erfolgs-, Fehler-, Warnungs- und Hinweisvariante
 - Tabellen-Grundlayout und `.table-wrap` für waagerechtes Rollen
 - `.spinner`, `.loading`
-- `.error` als Meldungsbox
+- `.error`, `.warning` und `.info` als Meldungsboxen
 - `.sr-only`, `.skip-link`
 - `@media (prefers-reduced-motion: reduce)`
 
@@ -297,14 +342,20 @@ zum Standard.
 Kontrastverhältnis zweier Farben. `tokens_test.go` liest `css/tokens.css` ein
 und prüft:
 
-- jedes Token, das keiner ausdrücklichen Ausnahme unterliegt (Flächen, Linien,
-  Radien, Schrift, `--accent-hover`), gegen `--card` und `--bg`, in beiden
-  Themen, ≥ 7:1 — die Ausnahmeliste steht im Testcode, alles andere ergibt
-  sich aus der Datei selbst, ein neues Textfarb-Token wird also ohne
-  weiteres Zutun erfasst
+- jedes Token, das keiner ausdrücklichen Ausnahme unterliegt (Flächen,
+  Linien, Radien, Schrift, `--accent`, `--accent-hover`, `--accent-on`),
+  gegen `--card` und `--bg`, in beiden Themen, ≥ 7:1 — die Ausnahmeliste
+  steht im Testcode, alles andere ergibt sich aus der Datei selbst, ein neues
+  Textfarb-Token wird also ohne weiteres Zutun erfasst. Jeder Eintrag der
+  Ausnahmeliste trägt im Testcode einen Verweis auf die Prüfung, die ihn
+  stattdessen abdeckt — eine Ausnahme ohne eigene gezielte Prüfung wäre
+  schlicht ungeprüft.
 - `--control-line` gegen `--card` und `--bg`, beide Themen, ≥ 3:1
-- die Knopfbeschriftung (`--card`) auf `--accent` und `--accent-hover`,
-  beide Themen, ≥ 7:1
+- die Knopfbeschriftung (`--accent-on`) auf `--accent` und `--accent-hover`,
+  beide Themen, ≥ 7:1 — das ist die gezielte Prüfung für die drei oben
+  genannten Ausnahmen: `--accent` und `--accent-hover` sind Flächen, keine
+  Textfarben, `--accent-on` ist Text auf dieser Fläche, nicht auf
+  `--bg`/`--card`
 - dass `tokens.css` genau einen `@media`-Block enthält und dieser
   `prefers-color-scheme: dark` lautet — die Zerlegung in helles und dunkles
   Thema setzt das voraus
