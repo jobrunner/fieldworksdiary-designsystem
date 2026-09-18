@@ -19,6 +19,7 @@
 - Das Modul liefert **Zeichnungen**, keine Fachlogik. Die Zuordnung „WMO-Code 45 → Nebel" bleibt in Tempus.
 - Alle Kommentare auf Deutsch und begründend. Commits auf Deutsch mit Conventional-Commits-Präfix.
 - Nach jeder Aufgabe: `go build ./... && go vet ./... && go test ./... && gofmt -l .` sauber.
+- **Die Palette ist seit der Erstellung dieses Plans von Blau auf Grün gewechselt.** `--accent` ist jetzt eine **Fläche** (`#186029`, in beiden Themen gleich, trägt weiße Schrift über `--accent-on`); als Textfarbe dient `--accent-text` (`#186029` hell / `#6ECB86` dunkel). Ein eigenes `--success` gibt es nicht mehr — Erfolg ist die Markenfarbe. Neu hinzugekommen ist `--info`. Wo dieser Plan eine Akzentfarbe für **Text, Linien oder Umrisse** vorsieht, ist `--accent-text` gemeint.
 
 ---
 
@@ -959,7 +960,10 @@ An `css/base.css` anhängen. Beachte: keine Farbe im Klartext, sonst schlägt
 .ds-kopf h1 {
   margin: 0;
   font-size: 1.5rem;
-  color: var(--accent);
+  /* --accent-text, nicht --accent: seit der Umstellung auf Grün ist
+     --accent eine Fläche (dunkel in beiden Themen, für weiße Schrift) und
+     als Textfarbe auf dunklem Grund mit 1,91:1 unlesbar. */
+  color: var(--accent-text);
 }
 
 .ds-kopf-titel p {
