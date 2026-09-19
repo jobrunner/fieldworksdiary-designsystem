@@ -2,10 +2,28 @@ package icons
 
 // Bedien-Symbole: was in jedem Dienst vorkommt, unabhängig vom Fach.
 
-// Standort — für den Knopf, der die aktuelle Position bestimmt.
+// Standort — für den Knopf „Aktuellen Standort verwenden", der in Expertus
+// prominent vorkommt.
+//
+// Radius 7 statt der ursprünglichen 3: in der Symbolgalerie wirkte das
+// Symbol neben Information() und Fehler() (beide r=10) deutlich leichter —
+// ein kleiner Kreis auf demselben 24er-Raster nimmt weniger optisches
+// Gewicht ein als sein Nachbar. r=7 gleicht das an, ohne die vier Striche an
+// den Feldrand zu drängen.
+//
+// Der Mittelpunkt ist bewusst eine gefüllte Fläche (fill="currentColor"
+// statt eines weiteren Kreis-Strichs): das Bild ist ein Fadenkreuz für die
+// AKTUELLE Position, keine Stecknadel für EINEN Ort auf der Karte — dieser
+// Unterschied ist in einer Feld-Anwendung wichtig. Ein Punkt als Fläche
+// bringt genau die optische Betonung, die eine Positionsmarkierung
+// braucht; ein hohler Punkt sähe wie ein weiterer Ring aus. Damit nutzt
+// dieses Symbol als einziges Nicht-Mond-Symbol eine Fläche — siehe
+// darfFlaechenNutzen() in icons.go für die ausdrücklich zugelassene
+// Ausnahme.
+//
 // Übernommen aus Ortus, wo dieses Symbol bereits in Gebrauch ist.
 func Standort() Icon {
-	return strich(`<circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>`)
+	return strich(`<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3"/>`)
 }
 
 // ChevronUnten — Aufklappen. In Ortus steht derselbe Pfad dreimal in einer

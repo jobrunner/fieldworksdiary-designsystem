@@ -101,3 +101,28 @@ func strich(inhalt string) Icon { return huelle(inhalt, false) }
 // flaeche baut ein Symbol als Flächenzeichnung. Nur für die Mondphasen —
 // siehe die Begründung an huelle.
 func flaeche(inhalt string) Icon { return huelle(inhalt, true) }
+
+// darfFlaechenNutzen zählt ausdrücklich auf, welche Symbole eine Fläche
+// (fill="currentColor") tragen dürfen, statt sich auf die Strichzeichnung
+// zu beschränken. Diese Liste steht bewusst hier im Produktivcode statt nur
+// im Test: die Zusage soll dort sichtbar sein, wo Symbole entstehen, und
+// nicht nur dort, wo sie geprüft wird — wer ein neues Symbol schreibt, das
+// eine Fläche braucht, findet die Stelle, die dafür freigeschaltet werden
+// muss, statt sie erst im Test zu erraten.
+//
+// Zwei Gruppen sind zugelassen:
+//   - die acht Mondphasen, deren Aufteilung zwischen beleuchtetem und
+//     unbeleuchtetem Teil die Aussage trägt (siehe huelle());
+//   - "standort", dessen gefüllter Mittelpunkt das Symbol als Fadenkreuz
+//     für die AKTUELLE Position lesbar macht statt als hohle Stecknadel
+//     (siehe Standort() in bedienung.go).
+//
+// Jedes weitere Symbol, das ohne Absicht eine Fläche nutzt, soll weiterhin
+// auffallen — deshalb eine benannte Liste statt einer aufgeweichten
+// Bedingung.
+func darfFlaechenNutzen(name string) bool {
+	if name == "standort" {
+		return true
+	}
+	return len(name) >= 5 && name[:5] == "mond-"
+}

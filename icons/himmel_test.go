@@ -33,14 +33,17 @@ func TestJedeMondphaseIstEigenstaendigGezeichnet(t *testing.T) {
 	}
 }
 
-func TestMondphasenDuerfenFlaechenNutzen(t *testing.T) {
-	// Die einzige zugelassene Ausnahme von der Strichzeichnung. Geprüft
-	// wird, dass sie auch wirklich nur hier auftritt.
+// TestNurZugelasseneSymboleDuerfenFlaechenNutzen prüft die Zusage aus
+// darfFlaechenNutzen() (icons.go): eine Fläche (fill="currentColor") darf
+// nur bei den dort benannten Ausnahmen auftreten — den acht Mondphasen und
+// "standort". Der Test hieß früher TestMondphasenDuerfenFlaechenNutzen, als
+// die Mondphasen die einzige Ausnahme waren; er prüft inzwischen eine
+// allgemeinere Zusage und trägt deshalb den allgemeineren Namen.
+func TestNurZugelasseneSymboleDuerfenFlaechenNutzen(t *testing.T) {
 	for name, icon := range Alle() {
 		gefuellt := contains(string(icon), `fill="currentColor"`)
-		istMond := len(name) >= 5 && name[:5] == "mond-"
-		if gefuellt && !istMond {
-			t.Errorf("%s nutzt Flächen, ist aber keine Mondphase — die Regelform ist die Strichzeichnung", name)
+		if gefuellt && !darfFlaechenNutzen(name) {
+			t.Errorf("%s nutzt Flächen, ist aber nicht in darfFlaechenNutzen() zugelassen — die Regelform ist die Strichzeichnung", name)
 		}
 	}
 }
