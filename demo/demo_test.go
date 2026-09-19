@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	designsystem "github.com/jobrunner/fieldworksdiary-designsystem"
+	"github.com/jobrunner/fieldworksdiary-designsystem/icons"
 )
 
 // klassenRe findet die Klassennamen, die base.css definiert.
@@ -306,7 +307,11 @@ func TestDemoZeigtJedesElement(t *testing.T) {
 		delete(angeboten, name)
 	}
 
-	benutzt := benutzteElemente(string(indexHTML))
+	// seite() statt der rohen, statischen indexHTML: die Symbolübersicht
+	// entsteht erst durch das Ersetzen von __SYMBOLE__, und nur die
+	// tatsächlich ausgelieferte Seite zeigt zuverlässig, was ein Mensch vor
+	// dem Einsatz zu sehen bekommt.
+	benutzt := benutzteElemente(string(seite()))
 	for element := range angeboten {
 		if !benutzt[element] {
 			t.Errorf("Die Demo-Seite zeigt kein <%s> — das Element wäre nirgends vor dem Einsatz zu sehen", element)
@@ -328,7 +333,9 @@ func TestDemoZeigtJedeKomponente(t *testing.T) {
 		delete(angeboten, nur)
 	}
 
-	demo := string(indexHTML)
+	// seite() statt der rohen, statischen indexHTML — siehe Begründung in
+	// TestDemoZeigtJedesElement.
+	demo := string(seite())
 	benutzt := benutzteKlassen(demo)
 	for klasse := range angeboten {
 		if !benutzt[klasse] {
@@ -419,6 +426,30 @@ func TestHandlerLiefertSeiteUndCSS(t *testing.T) {
 		n, _ := res.Body.Read(buf)
 		if !strings.Contains(strings.ToLower(string(buf[:n])), strings.ToLower(f.teil)) {
 			t.Errorf("GET %s: %q kommt im Anfang der Antwort nicht vor", f.pfad, f.teil)
+		}
+	}
+}
+
+// TestDemoZeigtJedesSymbol leitet die erwartete Liste aus icons.Alle() ab,
+// nicht aus einer Aufzählung im Testcode — sonst fehlt das nächste Symbol
+// still. Die Referenzseite ist die einzige Stelle, an der die Symbole vor
+// dem Einsatz angesehen werden. Ein Symbol, das hier fehlt, wurde nie
+// beurteilt — und bei den Mondphasen war genau die Unterscheidbarkeit der
+// Anlass für dieses Paket.
+func TestDemoZeigtJedesSymbol(t *testing.T) {
+	seiteHTML := string(seite())
+	for name := range icons.Alle() {
+		if !strings.Contains(seiteHTML, `data-icon="`+name+`"`) {
+			t.Errorf("die Referenzseite zeigt das Symbol %q nicht", name)
+		}
+	}
+}
+
+func TestDemoZeigtDasSeitengeruest(t *testing.T) {
+	seiteHTML := string(seite())
+	for _, teil := range []string{`class="ds-kopf"`, `class="ds-fuss"`} {
+		if !strings.Contains(seiteHTML, teil) {
+			t.Errorf("die Referenzseite zeigt %q nicht", teil)
 		}
 	}
 }

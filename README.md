@@ -27,7 +27,10 @@ die Variablen braucht.
 
 `css/tokens.css` — Farben für helles und dunkles Thema, Typografie, Abstände,
 Radien. `css/base.css` — Reset, Formularelemente, Knöpfe, Karten, Reiter,
-Marken, Tabellen, Zustände.
+Marken, Tabellen, Zustände, Akkordeon, Combobox. `icons/` — 40 Symbole als
+fertiges SVG (siehe unten). Das Wurzelpaket liefert außerdem Kopf- und
+Fußzeile (`Kopfzeile()`, `Fusszeile()`) sowie das Skript der Combobox
+(`JS()`).
 
 Fachliche Komponenten gehören nicht hierher: die Wetterkarte bleibt in Tempus,
 die Quellenliste in Ortus.
@@ -66,6 +69,99 @@ Token für sich gegen die Flächen besteht, und dass jede Regel, die Text- und
 Flächenfarbe gemeinsam benennt, zueinander passt — nicht, dass *jede* im CSS
 tatsächlich zustande kommende Kombination aus Kaskade und Vererbung
 zueinander passt.
+
+## Symbole
+
+    import "github.com/jobrunner/fieldworksdiary-designsystem/icons"
+
+    icons.Standort()      // <svg …> für den Standort-Knopf
+    icons.WetterNebel()   // Zeichnung; welcher WMO-Code das ist, weiß der Dienst
+    icons.Alle()          // alle 40 Symbole unter ihrem Namen ("standort", "wetter-nebel", …)
+    icons.Gruppen()       // dieselben Symbole, nach Bedeutung geordnet statt alphabetisch
+
+Jedes Symbol folgt derselben Bauregel: 24er-Raster, keine festen Maße,
+`currentColor`, `aria-hidden`. Ein Symbol nimmt damit die Farbe seines
+Umfelds an — es folgt Thema und Zustand, ohne eine eigene Farbe zu kennen.
+Die Größe bestimmt das CSS über die Klasse `.icon`.
+
+Einzige Ausnahme sind die acht Mondphasen: sie nutzen `fill="currentColor"`
+statt einer reinen Strichzeichnung, weil dort die Flächenaufteilung
+zwischen beleuchtetem und unbeleuchtetem Teil die Aussage trägt.
+
+`icons.Alle()` liefert die Symbole unsortiert (eine `map`); `icons.Gruppen()`
+liefert dieselbe Menge als geordnete Liste von Gruppen — Bedienung, Wetter,
+Mondphasen (in ihrer natürlichen Abfolge: neu, zunehmende Sichel, erstes
+Viertel, zunehmend gibbous, voll, abnehmend gibbous, letztes Viertel,
+abnehmende Sichel), Sonnenstände, Messwerte. Ein Dienst, der eine
+Symbolauswahl anbietet, kann diese Reihenfolge übernehmen, statt sie
+nachzubauen.
+
+Das Modul liefert Zeichnungen, keine Fachlogik: welcher Zustand welches
+Symbol bekommt, entscheidet der Dienst.
+
+## Seitengerüst
+
+    designsystem.Kopfzeile(designsystem.KopfDaten{Name: "Ortus", Untertitel: "…"})
+    designsystem.Fusszeile(designsystem.FussDaten{
+        Verweise: []designsystem.Verweis{{Text: "Health Status", Ziel: "/health"}},
+        Name:     "ortus",
+        Fassung:  "1.4.2",
+    })
+
+Name, Untertitel und Verweise übergibt der Dienst; Auszeichnung und Klassen
+(`ds-kopf`, `ds-fuss`, …) kommen aus dem Modul. Beide Funktionen geben
+`template.HTML` zurück; alle Werte laufen vorher durch `html/template` und
+werden maskiert.
+
+## Akkordeon
+
+    <details class="akkordeon">
+      <summary><span>Optionen</span><!-- Chevron-Symbol --></summary>
+      <div class="akkordeon-inhalt">…</div>
+    </details>
+
+Kein eigener Baustein in Go — `class="akkordeon"` auf einem nativen
+`<details>`/`<summary>`-Paar reicht. Auf- und Zuklappen, Tastaturbedienung
+und die Ansage für Screenreader liefert der Browser; das Modul steuert nur
+die Gestaltung, unter anderem die Drehung des Chevron-Symbols im
+geöffneten Zustand.
+
+## Combobox mit Vorschlagsliste
+
+    import (
+        designsystem "github.com/jobrunner/fieldworksdiary-designsystem"
+    )
+
+    mux.HandleFunc("/designsystem.js", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+        w.Write(designsystem.JS())
+    })
+
+Im HTML als ES-Modul einbinden und die Logik über `mountCombobox` an ein
+vorhandenes Eingabefeld samt Vorschlagsliste hängen:
+
+    <div class="form-group combobox">
+      <label for="art">Art</label>
+      <input type="text" id="art" role="combobox" aria-expanded="false"
+             aria-autocomplete="list" aria-controls="art-liste" autocomplete="off" />
+      <ul id="art-liste" class="combobox-liste" role="listbox" hidden></ul>
+    </div>
+
+    <script type="module">
+      import { mountCombobox } from "/designsystem.js";
+
+      mountCombobox({
+        input: document.getElementById("art"),
+        listbox: document.getElementById("art-liste"),
+        suggest: async (query) => { /* Vorschläge zu query liefern */ },
+        onPick: (eintrag) => { /* Auswahl verarbeiten */ },
+      });
+    </script>
+
+`JS()` liefert ein einziges, abhängigkeitsfreies ES-Modul — kein Bündler
+nötig, ebenso wie `CSS()` ein einziges Stylesheet liefert. Die Fachlogik
+(woher die Vorschläge kommen) bleibt beim Dienst; das Modul liefert nur
+Tastaturbedienung, ARIA-Zustände und Gestaltung der Liste.
 
 ## Referenzseite
 

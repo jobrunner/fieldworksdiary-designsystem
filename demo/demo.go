@@ -6,14 +6,61 @@
 package demo
 
 import (
+	"bytes"
 	_ "embed"
 	"net/http"
+	"strings"
 
 	designsystem "github.com/jobrunner/fieldworksdiary-designsystem"
+	"github.com/jobrunner/fieldworksdiary-designsystem/icons"
 )
 
 //go:embed index.html
 var indexHTML []byte
+
+// symbolPlatzhalter markiert die Stelle in index.html, an der die
+// Symbolübersicht eingesetzt wird. index.html ist statisch, die Symbole
+// kommen aber aus dem Paket icons — seite() setzt sie beim Ausliefern (und
+// in den Tests) ein, statt sie in HTML zu wiederholen.
+const symbolPlatzhalter = "__SYMBOLE__"
+
+// seite liefert die Referenzseite mit eingesetzter Symbolübersicht. Handler
+// und Tests rufen dieselbe Funktion auf, damit die ausgelieferte Seite und
+// das, was die Tests prüfen, nicht auseinanderlaufen können.
+func seite() []byte {
+	return bytes.ReplaceAll(indexHTML, []byte(symbolPlatzhalter), []byte(symbolGalerie()))
+}
+
+// symbolGalerie baut die Übersicht aller Symbole aus icons.Alle(), geordnet
+// nach icons.Gruppen() statt alphabetisch — bei den Mondphasen ist die
+// Abfolge selbst die Aussage. Jede Kachel trägt data-icon="<name>", damit
+// der Test sie findet und beim Ansehen erkennbar ist, welches Symbol man
+// vor sich hat.
+func symbolGalerie() string {
+	alle := icons.Alle()
+	var b strings.Builder
+	for _, gruppe := range icons.Gruppen() {
+		b.WriteString(`<h3 class="icon-gruppe-titel">`)
+		b.WriteString(gruppe.Titel)
+		b.WriteString(`</h3><div class="icon-galerie">`)
+		for _, name := range gruppe.Namen {
+			svg := string(alle[name])
+			// Die Icon-Funktionen liefern das SVG ohne class="icon" — die
+			// Größe bestimmt der Einsatzort, hier über dieselbe Klasse wie
+			// überall sonst im Design-System.
+			svg = strings.Replace(svg, "<svg ", `<svg class="icon" `, 1)
+			b.WriteString(`<div class="icon-kachel" data-icon="`)
+			b.WriteString(name)
+			b.WriteString(`">`)
+			b.WriteString(svg)
+			b.WriteString(`<span class="icon-name">`)
+			b.WriteString(name)
+			b.WriteString(`</span></div>`)
+		}
+		b.WriteString(`</div>`)
+	}
+	return b.String()
+}
 
 // Handler liefert die Referenzseite samt Stylesheet. Sie dient der
 // visuellen Abnahme des Systems und ist zugleich das kürzeste Beispiel,
@@ -43,7 +90,7 @@ func Handler() http.Handler {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(indexHTML)
+		w.Write(seite())
 	})
 	return mux
 }

@@ -618,3 +618,57 @@ thead th {
 .btn-icon .icon {
   margin: 0;
 }
+
+/* --- Symbolübersicht (Referenzseite) --- */
+
+/* Überschrift je Bedeutungsgruppe — Bedienung, Wetter, Mondphasen,
+   Sonnenstände, Messwerte. Kleiner als .card-title, damit die Gruppen
+   innerhalb der Karte "Symbole" als Unterteilung erkennbar bleiben, nicht
+   als eigene Karte. */
+.icon-gruppe-titel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 1rem 0 0.5rem;
+}
+
+.icon-gruppe-titel:first-child {
+  margin-top: 0;
+}
+
+/* Eine Kachel je Symbol, im Raster. auto-fill statt einer festen
+   Spaltenzahl, damit die Übersicht bei 40 Symbolen nicht in eine einzige
+   lange Spalte auf schmalen Bildschirmen zerfällt. */
+.icon-galerie {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.icon-kachel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.75rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.icon-name {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  text-align: center;
+  word-break: break-word;
+}
+
+/* Größer als die Standardgröße (.icon = 1.25em): in der Kachel steht das
+   Symbol allein, ohne Fließtext daneben, an dem es sich sonst bemisst —
+   und gerade bei den Mondphasen muss die Flächenaufteilung bei
+   tatsächlicher Einsatzgröße erkennbar sein. */
+.icon-galerie .icon {
+  width: 1.75em;
+  height: 1.75em;
+}
