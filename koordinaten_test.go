@@ -179,3 +179,78 @@ func strconvQuote(s string) string {
 	b, _ := json.Marshal(s)
 	return string(b)
 }
+
+// --- .koord-gitter: zwei Spalten als Regelfall --------------------------
+//
+// TestKoordGitterHatZweiSpaltenAlsRegelfall belegt die Nachbesserung: eine
+// frühere Fassung hatte grid-template-columns: 1fr als Grundregel und
+// schaltete erst ab 640px auf zwei Spalten um — die Felder standen damit
+// im häufigen, schmalen Fall (Expertus im Gelände auf dem Telefon)
+// untereinander, obwohl "nebeneinander" ausdrücklich verlangt war. Dieser
+// Test prüft NUR, dass die CSS-Regel die richtige Form hat
+// (repeat(auto-fit, minmax(…)) als Grundregel, keine Fensterbreiten-Abfrage
+// mehr für .koord-gitter) — er belegt die ANWESENHEIT der Regel, nicht die
+// tatsächliche Darstellung im Browser; das bleibt ohne einen echten
+// Browser-Testlauf offen.
+func TestKoordGitterHatZweiSpaltenAlsRegelfall(t *testing.T) {
+	css := removeComments(string(BaseCSS()))
+
+	if !strings.Contains(css, "grid-template-columns: repeat(auto-fit, minmax(") {
+		t.Error(`base.css enthält "grid-template-columns: repeat(auto-fit, minmax(...))" für .koord-gitter nicht — zwei Spalten sollen der Regelfall sein, unabhängig von der Fensterbreite`)
+	}
+
+	// Die Grundregel darf nicht mehr "1fr" ohne repeat(auto-fit, ...) sein
+	// (der alte, fehlerhafte Zustand: eine Spalte als Vorgabe).
+	i := strings.Index(css, ".koord-gitter")
+	if i < 0 {
+		t.Fatal(`base.css enthält ".koord-gitter" nicht`)
+	}
+	open := strings.Index(css[i:], "{")
+	close := strings.Index(css[i:], "}")
+	if open < 0 || close < 0 || close < open {
+		t.Fatal(`.koord-gitter-Regel konnte nicht abgegrenzt werden`)
+	}
+	rumpf := css[i+open : i+close]
+	if strings.Contains(rumpf, "grid-template-columns: 1fr;") {
+		t.Error(`.koord-gitter hat "grid-template-columns: 1fr;" als Grundregel — das ist der behobene Fehler (eine Spalte als Regelfall statt als Ausnahme)`)
+	}
+}
+
+// TestKoordGitterKeineMediaAbfrageMehr belegt, dass .koord-gitter nicht
+// mehr über eine @media(min-width)-Abfrage auf zwei Spalten umschaltet:
+// eine Abfrage nach der FENSTERBREITE hilft nicht, wenn die Bedienform in
+// einer schmalen Spalte innerhalb eines breiten Fensters steht — genau der
+// Einwand aus der Nachbesserung. repeat(auto-fit, ...) bemisst sich am
+// verfügbaren Platz des Elements selbst und braucht deshalb keine eigene
+// @media-Regel mehr für .koord-gitter.
+func TestKoordGitterKeineMediaAbfrageMehr(t *testing.T) {
+	css := removeComments(string(BaseCSS()))
+	i := strings.Index(css, "@media (min-width: 640px)")
+	if i < 0 {
+		t.Fatal(`base.css enthält "@media (min-width: 640px)" nicht mehr — Testannahme verletzt`)
+	}
+	open := strings.Index(css[i:], "{")
+	if open < 0 {
+		t.Fatal("konnte den @media-Block nicht abgrenzen")
+	}
+	start := i + open
+	tiefe := 0
+	ende := len(css)
+	for j := start; j < len(css); j++ {
+		switch css[j] {
+		case '{':
+			tiefe++
+		case '}':
+			tiefe--
+			if tiefe == 0 {
+				ende = j + 1
+				goto fertig
+			}
+		}
+	}
+fertig:
+	block := css[i:ende]
+	if strings.Contains(block, "koord-gitter") {
+		t.Error(`der @media (min-width: 640px)-Block erwähnt ".koord-gitter" noch — die Spaltenzahl soll sich am verfügbaren Platz orientieren, nicht an der Fensterbreite`)
+	}
+}

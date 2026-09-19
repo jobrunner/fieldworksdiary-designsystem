@@ -426,10 +426,6 @@ thead th {
   .card {
     padding: 1.5rem;
   }
-
-  .koord-gitter {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 /* --- Weniger Bewegung --- */
@@ -598,16 +594,28 @@ thead th {
 
 /* --- Koordinateneingabe --- */
 
-/* Zwei Felder nebeneinander (Rechtswert/Hochwert oder Breite/Länge, siehe
-   yZuerst in js/koordinaten.js) — auf schmalen Schirmen zwingend
-   untereinander, sonst überschreiten die Eingabefelder bei 200 %
-   Textgröße ihre Spalte und erzwingen waagerechtes Rollen der ganzen Seite
-   (WCAG 1.4.4/1.4.10), genau wie bei input/select/textarea oben
-   begründet. Die zweite Spalte kommt erst im @media-Block unter „Größere
-   Schirme“ hinzu. */
+/* Zwei Felder nebeneinander ist der Regelfall (Rechtswert/Hochwert oder
+   Breite/Länge, siehe yZuerst in js/koordinaten.js): sie bilden zusammen
+   EINE Angabe, und nebeneinander sieht man auf einen Blick, ob beide Werte
+   plausibel zueinander passen — untereinander wirken sie wie zwei
+   unabhängige Felder.
+
+   Absichtlich KEINE @media-Abfrage nach der Fensterbreite: die Bedienform
+   kann in einer schmalen Spalte innerhalb eines breiten Fensters stehen
+   (eingebettet neben anderen Karten, in einer Seitenleiste, …), und dann
+   sagt die Fensterbreite nichts über den tatsächlich verfügbaren Platz
+   aus. repeat(auto-fit, minmax(…)) bemisst sich stattdessen am
+   verfügbaren Platz DIESES Elements: reicht der Platz für zwei Spalten von
+   je mindestens 11rem, stehen die Felder nebeneinander, sonst fällt die
+   zweite Spalte automatisch weg — ein Feld mit Beschriftung bei 200 %
+   Textgröße braucht mindestens so viel, sonst droht waagerechtes Rollen
+   der ganzen Seite (WCAG 1.4.4/1.4.10), genau wie bei input/select/
+   textarea oben begründet. Das MGRS-Einzelfeld ist davon nicht betroffen:
+   es steht außerhalb von .koord-gitter in einer eigenen .form-group, die
+   Umschaltung übernimmt js/koordinaten.js. */
 .koord-gitter {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 1rem;
 }
 
