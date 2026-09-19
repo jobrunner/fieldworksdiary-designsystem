@@ -16,6 +16,24 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: JavaScript-Syntax
+        # js/combobox.js wird von keinem Go-Test geparst — ein Tippfehler
+        # ("function kaputt( {") ginge unbemerkt in fünf Dienste. node
+        # --check parst das Modul ohne es auszuführen.
+        #
+        # Als .mjs-Kopie geprüft, nicht direkt als .js: node erkennt
+        # js/combobox.js zwar über das "export" am Anfang als ES-Modul,
+        # aber --check auf einer .js-Datei nutzt dafür einen laxeren
+        # Erkennungspfad, der ein abgeschnittenes/unvollständiges Ende
+        # (genau der Tippfehler-Fall oben) nachweislich NICHT als
+        # Syntaxfehler meldet. Als .mjs erzwingt derselbe Aufruf den
+        # vollständigen ESM-Parser und schlägt korrekt fehl.
+        run: |
+          cp js/combobox.js /tmp/combobox-check.mjs
+          node --check /tmp/combobox-check.mjs
       - name: Vet
         run: go vet ./...
       - name: Tests
