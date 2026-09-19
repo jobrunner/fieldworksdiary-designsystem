@@ -1,6 +1,7 @@
 package designsystem
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -85,14 +86,49 @@ var vorkehrungen = map[string]string{
 // tatsächlich jeden Zeitgeber trifft, bliebe auch danach offen. Dieses
 // Modul hat keinen JavaScript-Testlauf und soll auch keinen einführen
 // (siehe Aufgabenstellung).
+//
+// Kommentare werden vor der Suche entfernt (removeComments, siehe
+// css_test.go — dort inzwischen auch für //-Zeilenkommentare erweitert, die
+// CSS nicht kennt, JavaScript aber schon). Ohne das ist die Prüfung durch
+// Kommentare erfüllbar: sechs der zehn Muster (AbortController, mousedown,
+// aria-activedescendant, Escape, id: null, destroy) stehen in
+// js/combobox.js sowohl im Code als auch im erklärenden Kommentar darüber
+// — wird der ganze Text durchsucht, meldet die Funktion eine Vorkehrung
+// als vorhanden, obwohl der zugehörige Code vollständig entfernt wurde.
 func fehlendeVorkehrungen(js string) []string {
+	kommentarlos := removeComments(js)
 	var fehlt []string
 	for muster := range vorkehrungen {
-		if !strings.Contains(js, muster) {
+		if muster == "destroy" {
+			if !destroyRaeumtAuf(kommentarlos) {
+				fehlt = append(fehlt, muster)
+			}
+			continue
+		}
+		if !strings.Contains(kommentarlos, muster) {
 			fehlt = append(fehlt, muster)
 		}
 	}
 	return fehlt
+}
+
+// destroyRaeumtAuf prüft die Vorkehrung "destroy" stärker als reine
+// Wortanwesenheit: die Methode heißt zwangsläufig "destroy" — dieses Wort
+// bliebe selbst dann im Code stehen, wenn ihr Rumpf komplett geleert würde
+// (belegt: "destroy() { … }" auf "destroy() {}" geleert → der alte,
+// wortbasierte Test blieb grün). Geprüft wird deshalb der RUMPF der
+// destroy()-Methode: er muss tatsächlich aufräumen (mindestens
+// clearTimeout und einen Abbruch über .abort() enthalten), nicht nur
+// existieren.
+var destroyMethodeRe = regexp.MustCompile(`destroy\(\)\s*\{([^}]*)\}`)
+
+func destroyRaeumtAuf(js string) bool {
+	m := destroyMethodeRe.FindStringSubmatch(js)
+	if m == nil {
+		return false
+	}
+	rumpf := m[1]
+	return strings.Contains(rumpf, "clearTimeout") && strings.Contains(rumpf, ".abort()")
 }
 
 func TestJSEnthaeltDieSiebenVorkehrungen(t *testing.T) {
@@ -102,13 +138,44 @@ func TestJSEnthaeltDieSiebenVorkehrungen(t *testing.T) {
 }
 
 // TestFehlendeVorkehrungErkanntBelegt macht wahr, was die vorige Prüfung nur
-// behauptet: dass sie tatsächlich anschlägt, wenn eine Vorkehrung fehlt.
-// Ein Test, der nie rot war, beweist nichts — deshalb hier derselbe
-// Erkennungsweg (fehlendeVorkehrungen), einmal absichtlich gegen einen Text
-// ohne AbortController und ohne destroy geführt.
+// behauptet: dass sie tatsächlich anschlägt, wenn eine Vorkehrung fehlt. Ein
+// Test, der nie rot war, beweist nichts.
+//
+// Die Mutation trifft ausschließlich den CODE, nie den erklärenden
+// Kommentar darüber — sonst bliebe das Muster über den Kommentar hinweg
+// weiter auffindbar, und der Test bewiese nur, dass ein Kommentar erkannt
+// wird, nicht dass fehlender CODE erkannt wird. Betroffen sind:
+//   - AbortController: die einzige Codestelle, die den Namen nennt
+//     ("laufend = new AbortController()"), wird entfernt; der erklärende
+//     Kommentar bei "Die Entprellung ist nicht verhandelbar…" bleibt
+//     unverändert stehen.
+//   - destroy: der Methodenkörper wird geleert (destroy() {}); Name und
+//     der erklärende Kommentar darüber bleiben stehen.
 func TestFehlendeVorkehrungErkanntBelegt(t *testing.T) {
-	verstuemmelt := strings.ReplaceAll(string(JS()), "AbortController", "XxxEntfernt")
-	verstuemmelt = strings.ReplaceAll(verstuemmelt, "destroy", "XxxEntfernt2")
+	js := string(JS())
+
+	verstuemmelt := strings.Replace(js,
+		"laufend = new AbortController()", "laufend = null", 1)
+	verstuemmelt = strings.Replace(verstuemmelt,
+		"destroy() {\n      clearTimeout(timer)\n      laufend?.abort()\n    },",
+		"destroy() {},", 1)
+
+	// Voraussetzung der Mutationsprobe: beide Ersetzungen müssen tatsächlich
+	// gegriffen haben, sonst prüft der Rest dieses Tests nichts.
+	if strings.Contains(verstuemmelt, "new AbortController()") {
+		t.Fatal("Mutation hat AbortController im Code nicht entfernt — Testaufbau prüft nicht das Vorgesehene")
+	}
+	if strings.Contains(verstuemmelt, "clearTimeout(timer)\n      laufend?.abort()\n    },") {
+		t.Fatal("Mutation hat den destroy()-Körper nicht geleert — Testaufbau prüft nicht das Vorgesehene")
+	}
+	// Die erklärenden Kommentare bleiben absichtlich stehen — genau das ist
+	// der Fall, den der alte, kommentarblinde Test überging.
+	if !strings.Contains(verstuemmelt, "AbortController") {
+		t.Fatal("Testaufbau fehlerhaft: der Kommentar, der \"AbortController\" nennt, wurde versehentlich mitentfernt")
+	}
+	if !strings.Contains(verstuemmelt, "destroy()") {
+		t.Fatal("Testaufbau fehlerhaft: die Erwähnung von destroy() im Kommentar wurde versehentlich mitentfernt")
+	}
 
 	fehlt := fehlendeVorkehrungen(verstuemmelt)
 	gefunden := map[string]bool{}
@@ -116,9 +183,27 @@ func TestFehlendeVorkehrungErkanntBelegt(t *testing.T) {
 		gefunden[m] = true
 	}
 	if !gefunden["AbortController"] {
-		t.Error("fehlendeVorkehrungen meldet ein entferntes AbortController nicht als fehlend")
+		t.Error("fehlendeVorkehrungen meldet ein aus dem Code entferntes AbortController nicht als fehlend, obwohl es nur noch im Kommentar steht")
 	}
 	if !gefunden["destroy"] {
-		t.Error("fehlendeVorkehrungen meldet ein entferntes destroy nicht als fehlend")
+		t.Error("fehlendeVorkehrungen meldet ein geleertes destroy() nicht als fehlend, obwohl der Name nur noch im Kommentar steht")
+	}
+}
+
+// TestKommentierteVorkehrungWirdNichtAlsAnwesendGezaehlt belegt das
+// eigentliche Kernstück von Teil A direkt: ein Text, der ein Muster NUR im
+// Kommentar enthält (kein Code), muss als fehlend gelten. Das ist die
+// Mutationsprobe aus dem Schlussprüfungsbefund nachgebaut — vorher lieferte
+// removeComments die Kommentare unverändert mit, dieser Test hätte fälsch-
+// lich "vorhanden" gemeldet.
+func TestKommentierteVorkehrungWirdNichtAlsAnwesendGezaehlt(t *testing.T) {
+	text := "// AbortController wird hier nur erwähnt, nicht verwendet\nconst x = 1\n"
+	fehlt := fehlendeVorkehrungen(text)
+	gefunden := map[string]bool{}
+	for _, m := range fehlt {
+		gefunden[m] = true
+	}
+	if !gefunden["AbortController"] {
+		t.Error("ein Muster, das nur im Kommentar steht, wird fälschlich als im Code vorhanden gewertet")
 	}
 }

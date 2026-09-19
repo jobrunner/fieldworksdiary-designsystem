@@ -77,21 +77,96 @@ func farbliterale(css string) []fund {
 	return funde
 }
 
-// removeComments entfernt alle /* ... */ Kommentare aus CSS,
-// behält aber alle Zeilenumbrüche: damit bleiben die Zeilennummern
-// in den Originalzellen erhalten.
-func removeComments(css string) string {
-	re := regexp.MustCompile(`(?s)/\*.*?\*/`)
-	return re.ReplaceAllStringFunc(css, func(s string) string {
-		// Ersetze den Kommentar charakterweise: Zeilenumbrüche bleiben,
-		// alles andere wird zu Leerzeichen.
-		return strings.Map(func(r rune) rune {
-			if r == '\n' {
-				return '\n'
+// removeComments entfernt Block- (/* ... */) UND Zeilenkommentare (// ...)
+// aus CSS- oder JavaScript-Text, behält aber alle Zeilenumbrüche: damit
+// bleiben Zeilennummern in den Originaltexten erhalten.
+//
+// CSS kennt keine //-Zeilenkommentare — ein "//" dort ist immer Teil eines
+// Werts (etwa "http://" in einer url()). JavaScript kennt beide Arten.
+// Deshalb ist die Funktion string-bewusst: "/*", "*/" und "//" INNERHALB
+// eines String- oder Template-Literals (', ", `) zählen nicht als
+// Kommentarbeginn — sonst würde ein "//" in einer eingebetteten URL
+// fälschlich als Zeilenkommentar gelesen. Das gilt für beide Sprachen
+// gleichermaßen und bricht deshalb die bestehende CSS-Nutzung nicht: CSS
+// enthält ohnehin kein rohes "//" außerhalb von Strings/URLs.
+func removeComments(src string) string {
+	var b strings.Builder
+	b.Grow(len(src))
+
+	const (
+		keiner = 0
+	)
+	var (
+		inString byte // 0, '\'', '"' oder '`'
+		inBlock  bool
+		inLine   bool
+	)
+
+	n := len(src)
+	for i := 0; i < n; i++ {
+		c := src[i]
+
+		if inLine {
+			if c == '\n' {
+				inLine = false
+				b.WriteByte('\n')
+			} else {
+				b.WriteByte(' ')
 			}
-			return ' '
-		}, s)
-	})
+			continue
+		}
+
+		if inBlock {
+			if c == '\n' {
+				b.WriteByte('\n')
+			} else {
+				b.WriteByte(' ')
+			}
+			if c == '*' && i+1 < n && src[i+1] == '/' {
+				inBlock = false
+				b.WriteByte(' ')
+				i++
+			}
+			continue
+		}
+
+		if inString != 0 {
+			b.WriteByte(c)
+			if c == '\\' && i+1 < n {
+				i++
+				b.WriteByte(src[i])
+				continue
+			}
+			if c == inString {
+				inString = keiner
+			}
+			continue
+		}
+
+		// Außerhalb von Kommentar und String: Beginn eines Strings,
+		// eines Block- oder eines Zeilenkommentars erkennen.
+		if c == '\'' || c == '"' || c == '`' {
+			inString = c
+			b.WriteByte(c)
+			continue
+		}
+		if c == '/' && i+1 < n && src[i+1] == '*' {
+			inBlock = true
+			b.WriteByte(' ')
+			b.WriteByte(' ')
+			i++
+			continue
+		}
+		if c == '/' && i+1 < n && src[i+1] == '/' {
+			inLine = true
+			b.WriteByte(' ')
+			b.WriteByte(' ')
+			i++
+			continue
+		}
+		b.WriteByte(c)
+	}
+	return b.String()
 }
 
 func TestBaseCSSEnthaeltKeineFarbliterale(t *testing.T) {
