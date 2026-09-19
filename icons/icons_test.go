@@ -1,6 +1,7 @@
 package icons
 
 import (
+	"html/template"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -117,6 +118,88 @@ func TestJedesSymbolFolgtDerBauregel(t *testing.T) {
 				t.Errorf("%s ist kein vollständiges SVG", name)
 			}
 		})
+	}
+}
+
+// TestHTMLLiefertTemplateHTML belegt die Zusage aus icons.go: HTML()
+// liefert template.HTML statt einem gewöhnlichen string, damit
+// html/template das Symbol als Markup einsetzt statt es zu maskieren.
+func TestHTMLLiefertTemplateHTML(t *testing.T) {
+	icon := Standort()
+	got := icon.HTML()
+	if string(got) != string(icon) {
+		t.Errorf("icon.HTML() = %q, erwartet %q", got, icon)
+	}
+}
+
+// TestOhneHTMLWuerdeHTMLTemplateDasSymbolMaskieren belegt das eigentliche
+// Problem, das HTML() löst: schreibt eine html/template-Vorlage
+// {{.Symbol}} statt {{.Symbol.HTML}}, bekommt sie sichtbaren
+// SVG-Quelltext statt eines Symbols, weil Icon für html/template
+// gewöhnlicher Text ist.
+func TestOhneHTMLWuerdeHTMLTemplateDasSymbolMaskieren(t *testing.T) {
+	icon := Standort()
+	tplOhne := template.Must(template.New("ohne").Parse(`<button>{{.}}</button>`))
+	var b strings.Builder
+	if err := tplOhne.Execute(&b, icon); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(b.String(), "<svg") {
+		t.Fatalf("Testaufbau fehlerhaft: {{.}} auf Icon sollte SVG maskieren, tat es hier nicht: %s", b.String())
+	}
+	if !strings.Contains(b.String(), "&lt;svg") {
+		t.Errorf("{{.}} auf Icon sollte den maskierten SVG-Quelltext zeigen (Beleg für das Problem), zeigt aber: %s", b.String())
+	}
+
+	tplMit := template.Must(template.New("mit").Parse(`<button>{{.HTML}}</button>`))
+	var b2 strings.Builder
+	if err := tplMit.Execute(&b2, icon); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(b2.String(), "<svg") {
+		t.Errorf("{{.HTML}} sollte das Symbol als Markup einsetzen, tat es hier nicht: %s", b2.String())
+	}
+}
+
+// TestMitKlasseSetztKlasseAufsSvgElement belegt icons.MitKlasse(): sie
+// erspart Dienste die Zeichenketten-Chirurgie, die zuvor in demo.go stand
+// (strings.Replace(svg, "<svg ", …)).
+func TestMitKlasseSetztKlasseAufsSvgElement(t *testing.T) {
+	icon := Standort()
+	got := string(MitKlasse(icon, "icon"))
+	if !contains(got, `<svg class="icon" `) {
+		t.Errorf("MitKlasse setzt die Klasse nicht auf das <svg>-Element: %s", got)
+	}
+	// Der restliche Inhalt bleibt unverändert.
+	if !contains(got, `viewBox="0 0 24 24"`) {
+		t.Errorf("MitKlasse hat den Rest des Symbols verändert: %s", got)
+	}
+}
+
+// TestMitBeschriftungMachtSymbolAnsagbar belegt icons.MitBeschriftung():
+// ein allein stehendes Symbol (etwa in einem Knopf ohne Text) braucht
+// role="img" und aria-label statt aria-hidden="true".
+func TestMitBeschriftungMachtSymbolAnsagbar(t *testing.T) {
+	icon := Standort()
+	got := string(MitBeschriftung(icon, "Standort bestimmen"))
+	if contains(got, `aria-hidden="true"`) {
+		t.Errorf("MitBeschriftung hat aria-hidden=\"true\" nicht entfernt: %s", got)
+	}
+	if !contains(got, `role="img"`) {
+		t.Errorf("MitBeschriftung setzt role=\"img\" nicht: %s", got)
+	}
+	if !contains(got, `aria-label="Standort bestimmen"`) {
+		t.Errorf("MitBeschriftung setzt aria-label nicht mit dem übergebenen Text: %s", got)
+	}
+}
+
+// TestMitBeschriftungMaskiertDenText belegt, dass ein Anführungszeichen im
+// Beschriftungstext nicht aus dem Attribut ausbricht.
+func TestMitBeschriftungMaskiertDenText(t *testing.T) {
+	icon := Standort()
+	got := string(MitBeschriftung(icon, `x" onclick="alert(1)`))
+	if contains(got, `onclick="alert(1)"`) {
+		t.Errorf("MitBeschriftung maskiert Anführungszeichen im Beschriftungstext nicht — Einschleusung ins Attribut möglich: %s", got)
 	}
 }
 

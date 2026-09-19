@@ -88,6 +88,21 @@ Einzige Ausnahme sind die acht Mondphasen: sie nutzen `fill="currentColor"`
 statt einer reinen Strichzeichnung, weil dort die Flächenaufteilung
 zwischen beleuchtetem und unbeleuchtetem Teil die Aussage trägt.
 
+**Achtung bei `html/template`:** `icons.Icon` ist ein `string`, keine
+Auszeichnung — `{{.Symbol}}` in einer `html/template`-Vorlage maskiert das
+SVG und zeigt sichtbaren Quelltext statt eines Symbols. Immer
+`{{.Symbol.HTML}}` schreiben (liefert `template.HTML`), niemals `{{.Symbol}}`
+direkt. `Kopfzeile()`/`Fusszeile()` liefern zum Vergleich bereits
+`template.HTML` — bei Icon ist der zusätzliche Schritt bewusst nötig, damit
+das Paket `icons` selbst ohne die Abhängigkeit auf `html/template` bleibt.
+
+    icons.MitKlasse(icons.Standort(), "icon")   // setzt class="icon" aufs <svg>
+    icons.MitBeschriftung(icons.Suche(), "Suchen") // role="img" + aria-label
+                                                     // statt aria-hidden, für
+                                                     // ein Symbol OHNE
+                                                     // begleitenden Text
+                                                     // (z. B. in einem Knopf)
+
 `icons.Alle()` liefert die Symbole unsortiert (eine `map`); `icons.Gruppen()`
 liefert dieselbe Menge als geordnete Liste von Gruppen — Bedienung, Wetter,
 Mondphasen (in ihrer natürlichen Abfolge: neu, zunehmende Sichel, erstes

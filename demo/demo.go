@@ -83,11 +83,12 @@ func symbolGalerie() string {
 		b.WriteString(gruppe.Titel)
 		b.WriteString(`</h3><div class="icon-galerie">`)
 		for _, name := range gruppe.Namen {
-			svg := string(alle[name])
 			// Die Icon-Funktionen liefern das SVG ohne class="icon" — die
 			// Größe bestimmt der Einsatzort, hier über dieselbe Klasse wie
-			// überall sonst im Design-System.
-			svg = strings.Replace(svg, "<svg ", `<svg class="icon" `, 1)
+			// überall sonst im Design-System. icons.MitKlasse() statt
+			// eigener Zeichenketten-Chirurgie (strings.Replace(svg, "<svg
+			// ", …)), die sonst jeder Dienst einzeln nachbauen müsste.
+			svg := string(icons.MitKlasse(alle[name], "icon"))
 			b.WriteString(`<div class="icon-kachel" data-icon="`)
 			b.WriteString(name)
 			b.WriteString(`">`)
