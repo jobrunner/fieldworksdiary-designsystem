@@ -4,7 +4,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
+
+	"github.com/jobrunner/fieldworksdiary-designsystem/internal/farbe"
 )
 
 func TestHuelleFolgtDerBauregel(t *testing.T) {
@@ -102,11 +105,13 @@ func TestJedesSymbolFolgtDerBauregel(t *testing.T) {
 					}
 				}
 			}
-			// Farben in Klartext sind überall verboten.
-			for _, farbeVerboten := range []string{`#`, `rgb(`, `hsl(`} {
-				if contains(s, farbeVerboten) {
-					t.Errorf("%s enthält Farbe %q — Farbe kommt aus currentColor", name, farbeVerboten)
-				}
+			// Farben in Klartext sind überall verboten — mit derselben
+			// Strenge wie in base.css (css_test.go): nicht nur "#",
+			// "rgb(", "hsl(", sondern auch benannte Farben wie "black"
+			// und moderne Funktionen wie oklch(). Belegt: stroke="black"
+			// kam an der alten, dreiteiligen Prüfung unbemerkt vorbei.
+			for _, wert := range farbe.Funde(s) {
+				t.Errorf("%s enthält Farbe %q — Farbe kommt aus currentColor", name, wert)
 			}
 			if !contains(s, `<svg`) || !contains(s, `</svg>`) {
 				t.Errorf("%s ist kein vollständiges SVG", name)
@@ -164,6 +169,62 @@ func TestAlleSammelkeineDuplikate(t *testing.T) {
 		}
 		t.Errorf("Duplikate in Teil-Sammlungen: Summe %d, Gesamtmenge %d",
 			summe, gesamt)
+	}
+}
+
+// TestFarbeInKlartextAlsWortWirdErkannt belegt, dass die geschärfte Prüfung
+// aus TestJedesSymbolFolgtDerBauregel tatsächlich anschlägt, wenn ein
+// Symbol eine Farbe im Klartext trägt — nicht nur bei "#", "rgb(", "hsl(",
+// sondern auch bei einem Farbwort. Ein Test, der nie rot war, beweist
+// nichts: nachgewiesen ist der reale Fall aus der Schlussprüfung,
+// stroke="black" statt stroke="currentColor", der die alte, dreiteilige
+// Prüfung unbemerkt passierte.
+func TestFarbeInKlartextAlsWortWirdErkannt(t *testing.T) {
+	mutiert := strings.Replace(string(Standort()), `stroke="currentColor"`, `stroke="black"`, 1)
+	if mutiert == string(Standort()) {
+		t.Fatal("Mutation hat stroke=currentColor nicht ersetzt — Testaufbau prüft nicht das Vorgesehene")
+	}
+	funde := farbe.Funde(mutiert)
+	if len(funde) == 0 {
+		t.Error(`farbe.Funde erkennt stroke="black" nicht — sollte als Farbliteral gelten`)
+	}
+}
+
+// TestAlleIstPaarweiseVerschieden prüft, dass keine zwei Symbole
+// identisches Markup tragen. Die bisherigen Tests vergleichen nur Anzahlen
+// und Schlüsselnamen, nie Zeichnungen — ein falsch verdrahteter
+// Karteneintrag (etwa "suche": Standort()) fiel dadurch nicht auf: er
+// ändert weder die Anzahl noch die Namen, nur den Inhalt hinter einem der
+// Namen.
+func TestAlleIstPaarweiseVerschieden(t *testing.T) {
+	gesehen := map[Icon]string{}
+	for name, icon := range Alle() {
+		if vorher, da := gesehen[icon]; da {
+			t.Errorf("%q ist identisch gezeichnet wie %q — Copy-Paste-Fehler oder ins falsche Ziel verdrahtet", name, vorher)
+			continue
+		}
+		gesehen[icon] = name
+	}
+}
+
+// TestFalschVerdrahteterEintragWirdErkannt belegt, dass
+// TestAlleIstPaarweiseVerschieden tatsächlich anschlägt: derselbe Fall wie
+// im Befund, "suche" trüge das Markup von Standort().
+func TestFalschVerdrahteterEintragWirdErkannt(t *testing.T) {
+	alle := Alle()
+	alle["suche"] = alle["standort"] // Nachbau der Fehlverdrahtung aus dem Befund
+
+	gesehen := map[Icon]string{}
+	kollision := false
+	for name, icon := range alle {
+		if vorher, da := gesehen[icon]; da {
+			kollision = true
+			_ = vorher
+		}
+		gesehen[icon] = name
+	}
+	if !kollision {
+		t.Error("die Duplikatsprüfung erkennt eine Fehlverdrahtung (suche == standort) nicht")
 	}
 }
 
