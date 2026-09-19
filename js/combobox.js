@@ -5,13 +5,14 @@
 // Treffer bedeutet (onPick). Ohne Bündler und ohne Abhängigkeiten lauffähig
 // — deshalb ein ES-Modul ohne import von außerhalb.
 
-// OPTION_ID_PREFIX bildet die id jedes <li>, auf die aria-activedescendant
-// zeigt. Fest verdrahtet statt konfigurierbar: zwei Comboboxen auf derselben
-// Seite bräuchten sonst eigene Präfixe, um Kollisionen in der id zu
-// vermeiden — das kann ein Dienst mit eigenem input/listbox-Paar selbst
-// lösen, das Modul erzwingt hier nur Eindeutigkeit innerhalb EINER
-// mountCombobox()-Instanz.
-const OPTION_ID_PREFIX = 'combobox-option-'
+// DEFAULT_OPTION_ID_PREFIX ist die Vorgabe für idPrefix (siehe
+// mountCombobox). Zwei Comboboxen auf derselben Seite mit der Vorgabe
+// erzeugten beide id="combobox-option-0" — aria-activedescendant zeigte
+// dann möglicherweise in die falsche Liste. Ein Dienst mit mehr als einer
+// Combobox auf einer Seite übergibt deshalb je Instanz ein eigenes
+// idPrefix; das Modul kann die Kollision nicht selbst lösen, weil es keine
+// der beiden Instanzen kennt, solange nicht beide verdrahtet sind.
+const DEFAULT_OPTION_ID_PREFIX = 'combobox-option-'
 
 // --- Zustandslogik, ohne DOM -------------------------------------------
 //
@@ -22,7 +23,7 @@ const OPTION_ID_PREFIX = 'combobox-option-'
 // wäre hier ein zweiter Baustein mehr, als die Aufgabe vorsieht (nur
 // js/combobox.js ist vorgesehen) — die Trennung bleibt deshalb innerhalb
 // dieser Datei bestehen, nicht als eigene Datei.
-function erzeugeZustand() {
+function erzeugeZustand(idPrefix) {
   let query = ''
   let options = []
   let open = false
@@ -34,7 +35,7 @@ function erzeugeZustand() {
       options,
       open,
       activeIndex,
-      activeId: activeIndex >= 0 ? `${OPTION_ID_PREFIX}${activeIndex}` : null,
+      activeId: activeIndex >= 0 ? `${idPrefix}${activeIndex}` : null,
     }
   }
 
@@ -85,8 +86,31 @@ function erzeugeZustand() {
 // Anknüpfungspunkt an die Fachlichkeit — was ein Treffer bedeutet und woher
 // er kommt, entscheidet der Dienst; das Modul kennt nur id, text und einen
 // optionalen hinweis, der gedämpft hinter dem Text steht.
-export function mountCombobox({ input, listbox, suggest, onPick, onError, debounceMs = 200 }) {
-  const zustand = erzeugeZustand()
+//
+// idPrefix: siehe DEFAULT_OPTION_ID_PREFIX — nur bei mehr als einer
+// Combobox auf derselben Seite nötig, dann je Instanz ein eigener Wert.
+//
+// clearOnPick (Vorgabe: true): nach einer Auswahl wird das Eingabefeld
+// geleert. Das ist Expertus' Semantik — dort wird wiederholt eine Art
+// HINZUGEFÜGT, das Feld muss für die nächste Eingabe leer sein, und dieser
+// Fall ist über die fünf Dienste hinweg der häufigere (mehrfaches
+// Hinzufügen in einer Sitzung ist die Regel, eine einmalige Ortsauswahl
+// die Ausnahme). Für eine ORTSAUSWAHL in Ortus oder Tempus ist Leeren
+// dagegen falsch: der gewählte Ort soll im Feld stehen bleiben, sichtbar
+// als das, was gerade gilt. Deshalb konfigurierbar: clearOnPick: false
+// lässt den Text des gewählten Eintrags im Feld stehen (oder den
+// eingegebenen Freitext, wenn kein Eintrag getroffen wurde).
+export function mountCombobox({
+  input,
+  listbox,
+  suggest,
+  onPick,
+  onError,
+  debounceMs = 200,
+  idPrefix = DEFAULT_OPTION_ID_PREFIX,
+  clearOnPick = true,
+}) {
+  const zustand = erzeugeZustand(idPrefix)
   let timer = null
   let laufend = null
 
@@ -102,7 +126,7 @@ export function mountCombobox({ input, listbox, suggest, onPick, onError, deboun
 
     s.options.forEach((eintrag, i) => {
       const li = document.createElement('li')
-      li.id = `${OPTION_ID_PREFIX}${i}`
+      li.id = `${idPrefix}${i}`
       li.setAttribute('role', 'option')
       li.className = 'option'
       li.setAttribute('aria-selected', String(i === s.activeIndex))
@@ -131,8 +155,10 @@ export function mountCombobox({ input, listbox, suggest, onPick, onError, deboun
     // eingegebene Text, mit id: null. Manche Fachbegriffe stehen in keinem
     // Verzeichnis, aus dem suggest schöpfen könnte.
     const ergebnis = gewaehlt ?? { id: null, text: input.value.trim() }
-    input.value = ''
-    zustand.setQuery('')
+    // clearOnPick steuert, was im Feld stehen bleibt — siehe die
+    // Begründung an mountCombobox.
+    input.value = clearOnPick ? '' : ergebnis.text
+    zustand.setQuery(input.value)
     zustand.setOptions([])
     paint()
     onPick(ergebnis)
@@ -145,7 +171,7 @@ export function mountCombobox({ input, listbox, suggest, onPick, onError, deboun
   // Der AbortController weiter unten ersetzt das nicht: er verhindert nur,
   // dass eine überholte ANTWORT eine neuere überschreibt, nicht, dass die
   // ANFRAGE gestellt wird.
-  input.addEventListener('input', () => {
+  function aufEingabe() {
     zustand.setQuery(input.value)
     clearTimeout(timer)
     timer = setTimeout(async () => {
@@ -162,9 +188,9 @@ export function mountCombobox({ input, listbox, suggest, onPick, onError, deboun
         onError?.(err)
       }
     }, debounceMs)
-  })
+  }
 
-  input.addEventListener('keydown', (e) => {
+  function aufTastendruck(e) {
     if (e.key === 'ArrowDown') { e.preventDefault(); zustand.move(1); paint() }
     else if (e.key === 'ArrowUp') { e.preventDefault(); zustand.move(-1); paint() }
     else if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) uebernehmen() }
@@ -176,19 +202,31 @@ export function mountCombobox({ input, listbox, suggest, onPick, onError, deboun
       zustand.close()
       paint()
     }
-  })
+  }
 
-  input.addEventListener('blur', () => { zustand.close(); paint() })
+  function aufBlur() {
+    zustand.close()
+    paint()
+  }
+
+  input.addEventListener('input', aufEingabe)
+  input.addEventListener('keydown', aufTastendruck)
+  input.addEventListener('blur', aufBlur)
 
   paint()
 
-  // destroy() räumt Zeitgeber und laufende Anfrage ab. Ohne das feuert ein
-  // Zeitgeber, dessen Feld längst aus dem Baum entfernt wurde, noch in einen
-  // nicht mehr existierenden Zustand.
+  // destroy() räumt Zeitgeber, laufende Anfrage UND die drei Ereignishörer
+  // auf dem Eingabefeld ab. Ohne die Hörer bleiben sie auch nach dem
+  // Entfernen des Feldes aus dem Baum aktiv und halten diese Instanz am
+  // Leben — ein zweiter mountCombobox() auf dasselbe Feld ließe dann beide
+  // Instanzen gleichzeitig reagieren.
   return {
     destroy() {
       clearTimeout(timer)
       laufend?.abort()
+      input.removeEventListener('input', aufEingabe)
+      input.removeEventListener('keydown', aufTastendruck)
+      input.removeEventListener('blur', aufBlur)
     },
   }
 }

@@ -178,6 +178,29 @@ nötig, ebenso wie `CSS()` ein einziges Stylesheet liefert. Die Fachlogik
 (woher die Vorschläge kommen) bleibt beim Dienst; das Modul liefert nur
 Tastaturbedienung, ARIA-Zustände und Gestaltung der Liste.
 
+Zwei weitere Optionen, beide mit einer Vorgabe, die für den häufigeren Fall
+passt:
+
+- `idPrefix` — nur nötig, wenn eine Seite **mehr als eine** Combobox
+  einbindet: ohne eigenes `idPrefix` je Instanz erzeugten beide dieselben
+  `id`-Werte für ihre Einträge, und `aria-activedescendant` könnte in die
+  falsche Liste zeigen.
+- `clearOnPick` (Vorgabe: `true`) — nach einer Auswahl wird das Eingabefeld
+  geleert. Das passt für den häufigeren Fall: wiederholtes Hinzufügen (etwa
+  einer Art in Expertus), bei dem das Feld für die nächste Eingabe leer
+  sein muss. Für eine **Ortsauswahl** (Ortus, Tempus) ist Leeren dagegen
+  falsch — dort soll der gewählte Ort im Feld stehen bleiben:
+  `clearOnPick: false` übergeben.
+
+    mountCombobox({
+      input: document.getElementById("ort"),
+      listbox: document.getElementById("ort-liste"),
+      suggest: async (query) => { /* … */ },
+      onPick: (eintrag) => { /* … */ },
+      idPrefix: "ort-option-",
+      clearOnPick: false,
+    });
+
 ## Referenzseite
 
     go run ./cmd/demo

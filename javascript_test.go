@@ -74,6 +74,9 @@ var vorkehrungen = map[string]string{
 	"Escape":                "Tastaturbedienung: schließen und abbrechen",
 	"id: null":              "Freitext bleibt zulässig",
 	"destroy":               "Aufräumen von Zeitgeber und laufender Anfrage",
+	"idPrefix":              "konfigurierbares Options-id-Präfix gegen Kollisionen zwischen zwei Comboboxen",
+	"clearOnPick":           "konfigurierbares Leeren des Eingabefelds nach einer Auswahl",
+	"removeEventListener":   "destroy() meldet auch die Ereignishörer ab, nicht nur Zeitgeber und Anfrage",
 }
 
 // fehlendeVorkehrungen prüft von Go aus, was ohne JavaScript-Testlauf
@@ -156,17 +159,21 @@ func TestFehlendeVorkehrungErkanntBelegt(t *testing.T) {
 
 	verstuemmelt := strings.Replace(js,
 		"laufend = new AbortController()", "laufend = null", 1)
-	verstuemmelt = strings.Replace(verstuemmelt,
-		"destroy() {\n      clearTimeout(timer)\n      laufend?.abort()\n    },",
-		"destroy() {},", 1)
+	// destroy()-Körper geleert, unabhängig von seinem genauen Inhalt: der
+	// Körper wächst mit weiteren Aufräumarbeiten (siehe destroy(), das auch
+	// die Ereignishörer abmeldet) — die Mutationsprobe soll dagegen robust
+	// bleiben, statt den exakten Wortlaut hier zu wiederholen.
+	if m := destroyMethodeRe.FindStringIndex(verstuemmelt); m != nil {
+		verstuemmelt = verstuemmelt[:m[0]] + "destroy() {}" + verstuemmelt[m[1]:]
+	}
 
 	// Voraussetzung der Mutationsprobe: beide Ersetzungen müssen tatsächlich
 	// gegriffen haben, sonst prüft der Rest dieses Tests nichts.
 	if strings.Contains(verstuemmelt, "new AbortController()") {
 		t.Fatal("Mutation hat AbortController im Code nicht entfernt — Testaufbau prüft nicht das Vorgesehene")
 	}
-	if strings.Contains(verstuemmelt, "clearTimeout(timer)\n      laufend?.abort()\n    },") {
-		t.Fatal("Mutation hat den destroy()-Körper nicht geleert — Testaufbau prüft nicht das Vorgesehene")
+	if destroyRaeumtAuf(verstuemmelt) {
+		t.Fatal("Mutation hat den destroy()-Körper nicht wirkungslos gemacht — Testaufbau prüft nicht das Vorgesehene")
 	}
 	// Die erklärenden Kommentare bleiben absichtlich stehen — genau das ist
 	// der Fall, den der alte, kommentarblinde Test überging.
