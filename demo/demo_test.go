@@ -453,3 +453,24 @@ func TestDemoZeigtDasSeitengeruest(t *testing.T) {
 		}
 	}
 }
+
+// TestDemoRuftKopfzeileUndFusszeileTatsaechlichAuf belegt, dass die
+// Referenzseite Kopf und Fuß über designsystem.Kopfzeile()/Fusszeile()
+// erzeugt, statt das Markup handgeschrieben nachzubauen — dieselbe
+// Schummelklasse, gegen die TestIndexBindetStylesheetEinUndSchummeltNicht
+// beim <style>-Block schützt, hier für das Gerüst. Geprüft wird über den
+// Untertitel und den zweiten Fußzeilenverweis: beide stehen NUR in
+// referenzKopf()/referenzFuss() in demo.go, nicht mehr als Text in
+// index.html — kommen sie in der ausgelieferten Seite vor, müssen sie über
+// Kopfzeile()/Fusszeile() dorthin gelangt sein.
+func TestDemoRuftKopfzeileUndFusszeileTatsaechlichAuf(t *testing.T) {
+	seiteHTML := string(seite())
+	for _, teil := range []string{
+		string(designsystem.Kopfzeile(referenzKopf())),
+		string(designsystem.Fusszeile(referenzFuss())),
+	} {
+		if !strings.Contains(seiteHTML, teil) {
+			t.Errorf("die Referenzseite enthält nicht das von Kopfzeile()/Fusszeile() erzeugte Markup:\n%s", teil)
+		}
+	}
+}

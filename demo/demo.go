@@ -24,11 +24,50 @@ var indexHTML []byte
 // in den Tests) ein, statt sie in HTML zu wiederholen.
 const symbolPlatzhalter = "__SYMBOLE__"
 
-// seite liefert die Referenzseite mit eingesetzter Symbolübersicht. Handler
-// und Tests rufen dieselbe Funktion auf, damit die ausgelieferte Seite und
-// das, was die Tests prüfen, nicht auseinanderlaufen können.
+// kopfPlatzhalter und fussPlatzhalter markieren die Stellen, an denen Kopf-
+// und Fußzeile eingesetzt werden. Zuvor stand das Markup handgeschrieben in
+// index.html, während designsystem.Kopfzeile()/Fusszeile() nirgends
+// aufgerufen wurden — dieselbe Schummelklasse, gegen die
+// TestIndexBindetStylesheetEinUndSchummeltNicht beim <style>-Block schützt,
+// nur beim Gerüst nicht gezogen. Die Referenzseite ist die einzige Stelle,
+// an der ein Mensch das System vor dem Einsatz ansieht; sie muss deshalb
+// zeigen, was Kopfzeile()/Fusszeile() TATSÄCHLICH liefern.
+const (
+	kopfPlatzhalter = "__KOPF__"
+	fussPlatzhalter = "__FUSS__"
+)
+
+// referenzKopf und referenzFuss sind die Beispieldaten der Referenzseite —
+// fachlich das Gegenstück zu den zehn erfundenen Combobox-Einträgen im
+// eingebetteten Skript.
+func referenzKopf() designsystem.KopfDaten {
+	return designsystem.KopfDaten{
+		Name: "Design-System",
+		Untertitel: "Jede Komponente in ihrem Normalzustand. Das Thema folgt der " +
+			"Systemeinstellung — zum Prüfen des dunklen Themas dort umschalten.",
+	}
+}
+
+func referenzFuss() designsystem.FussDaten {
+	return designsystem.FussDaten{
+		Verweise: []designsystem.Verweis{
+			{Text: "Stylesheet", Ziel: "/designsystem.css"},
+			{Text: "Nach oben", Ziel: "#inhalt"},
+		},
+		Name:    "designsystem",
+		Fassung: "0.1.0",
+	}
+}
+
+// seite liefert die Referenzseite mit eingesetzter Symbolübersicht sowie
+// Kopf- und Fußzeile. Handler und Tests rufen dieselbe Funktion auf, damit
+// die ausgelieferte Seite und das, was die Tests prüfen, nicht
+// auseinanderlaufen können.
 func seite() []byte {
-	return bytes.ReplaceAll(indexHTML, []byte(symbolPlatzhalter), []byte(symbolGalerie()))
+	out := bytes.ReplaceAll(indexHTML, []byte(symbolPlatzhalter), []byte(symbolGalerie()))
+	out = bytes.ReplaceAll(out, []byte(kopfPlatzhalter), []byte(designsystem.Kopfzeile(referenzKopf())))
+	out = bytes.ReplaceAll(out, []byte(fussPlatzhalter), []byte(designsystem.Fusszeile(referenzFuss())))
+	return out
 }
 
 // symbolGalerie baut die Übersicht aller Symbole aus icons.Alle(), geordnet
