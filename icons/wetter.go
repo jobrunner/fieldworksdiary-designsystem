@@ -36,8 +36,20 @@ func WetterLeichtBewoelktNacht() Icon {
 // nur die Wolke zeigt und das Feld ausfüllen kann. Die letzte Arc nutzt Radius 5.76:
 // Die Distanz von (18.5,5.5) zu (18,17) ist etwa 11.5, benötigt also mindestens
 // Radius 5.75. Der Wert 5.76 sorgt für exakte Beschreibung ohne Renderer-Nachkorrektur.
+//
+// Fix-Runde 2 (Schlussprüfung): der Schlussbogen A5.76 5.76 0 0 1 18 17
+// buchtet nicht nur bis zu seinen Endpunkten (18.5,5.5) und (18,17) aus,
+// sondern erreicht an seinem Scheitelpunkt x≈23.78 — mit halber
+// Strichbreite (1 Einheit) läge die Kontur bei ≈24,78 und damit 0,78
+// Einheiten außerhalb des 24er-Feldes: die rechte Wolkenkante wurde
+// abgeflacht dargestellt. Um icons/geometrie_test.go zu bestehen (siehe
+// dort — TestSymbolGeometrieImFeld prüft Punkte einschließlich halber
+// Strichbreite UND für jeden Bogen λ≤1), ist die gesamte Wolke um 0,8
+// Einheiten nach links gerückt (18→17.2, 7→6.2, Endpunkt 18→17.2). Radien
+// und damit die Größe der Wolke bleiben unverändert — bewusst größer als
+// die übrigen Wettersymbole, siehe oben.
 func WetterBewoelkt() Icon {
-	return strich(`<path d="M18 17H7a5 5 0 010-10 6 6 0 0111.5-1.5A5.76 5.76 0 0118 17z"/>`)
+	return strich(`<path d="M17.2 17H6.2a5 5 0 010-10 6 6 0 0111.5-1.5A5.76 5.76 0 0117.2 17z"/>`)
 }
 
 // WetterNebel und die folgenden acht Niederschlagssymbole nutzen dieselbe Wolkenkonstruktion
