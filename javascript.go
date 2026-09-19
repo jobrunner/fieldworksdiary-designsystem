@@ -2,20 +2,31 @@ package designsystem
 
 import (
 	_ "embed"
-	"slices"
 )
 
 //go:embed js/combobox.js
 var comboboxJS []byte
 
-// JS liefert das Verhalten der Komponenten, die ein Skript brauchen —
-// bislang allein die Combobox mit Vorschlagsliste. Ein einziges ES-Modul
-// ohne Bündler und ohne Abhängigkeiten, genau wie CSS() ein einziges
-// Stylesheet liefert.
+//go:embed js/koordinaten.js
+var koordinatenJS []byte
+
+// JS liefert das Verhalten der Komponenten, die ein Skript brauchen: die
+// Combobox mit Vorschlagsliste und die Koordinateneingabe. Ein einziges
+// ES-Modul ohne Bündler und ohne Abhängigkeiten, genau wie CSS() ein
+// einziges Stylesheet liefert — beide Quelldateien sind für sich
+// eigenständige ES-Module (keine importiert die andere) und werden hier
+// aneinandergehängt, damit ein Dienst weiterhin nur eine einzige Datei
+// unter /designsystem.js einbinden muss.
 //
-// Liefert eine Kopie, keine Referenz auf den eingebetteten Puffer — aus
-// demselben Grund wie TokensCSS() und BaseCSS(): []byte ist veränderlich,
-// ein Aufrufer, der das Ergebnis in-place verändert, würde sonst den
-// Prozesszustand für jeden weiteren Aufruf und jeden anderen Aufrufer im
-// selben Prozess beschädigen.
-func JS() []byte { return slices.Clone(comboboxJS) }
+// Das Ergebnis entsteht als frisch angelegter Puffer (append auf ein mit
+// make() erzeugtes []byte, nicht auf einen der eingebetteten Puffer
+// selbst) — aus demselben Grund wie slices.Clone() bei TokensCSS() und
+// BaseCSS(): ein Aufrufer, der das Ergebnis in-place verändert, darf die
+// eingebetteten Puffer nicht für jeden weiteren Aufruf beschädigen.
+func JS() []byte {
+	kombiniert := make([]byte, 0, len(comboboxJS)+1+len(koordinatenJS))
+	kombiniert = append(kombiniert, comboboxJS...)
+	kombiniert = append(kombiniert, '\n')
+	kombiniert = append(kombiniert, koordinatenJS...)
+	return kombiniert
+}

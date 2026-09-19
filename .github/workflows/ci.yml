@@ -34,6 +34,8 @@ jobs:
         run: |
           cp js/combobox.js /tmp/combobox-check.mjs
           node --check /tmp/combobox-check.mjs
+          cp js/koordinaten.js /tmp/koordinaten-check.mjs
+          node --check /tmp/koordinaten-check.mjs
       - name: Vet
         run: go vet ./...
       - name: Tests

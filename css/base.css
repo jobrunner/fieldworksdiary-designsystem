@@ -426,6 +426,10 @@ thead th {
   .card {
     padding: 1.5rem;
   }
+
+  .koord-gitter {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 /* --- Weniger Bewegung --- */
@@ -590,6 +594,21 @@ thead th {
      weiße Schrift trägt, keine Textfarbe auf einer neutralen Fläche. */
   color: var(--accent-on);
   background: var(--accent);
+}
+
+/* --- Koordinateneingabe --- */
+
+/* Zwei Felder nebeneinander (Rechtswert/Hochwert oder Breite/Länge, siehe
+   yZuerst in js/koordinaten.js) — auf schmalen Schirmen zwingend
+   untereinander, sonst überschreiten die Eingabefelder bei 200 %
+   Textgröße ihre Spalte und erzwingen waagerechtes Rollen der ganzen Seite
+   (WCAG 1.4.4/1.4.10), genau wie bei input/select/textarea oben
+   begründet. Die zweite Spalte kommt erst im @media-Block unter „Größere
+   Schirme“ hinzu. */
+.koord-gitter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 }
 
 /* --- Symbole --- */

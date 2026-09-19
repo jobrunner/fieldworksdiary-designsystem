@@ -199,6 +199,64 @@
         </p>
       </section>
 
+      <section class="card">
+        <h2 class="card-title">Koordinateneingabe — mit Auswahl</h2>
+        <p class="muted">
+          Sieben Systeme wären möglich (Ortus); hier stehen drei zur
+          Veranschaulichung. Bei WGS 84 steht die Breite oben (so spricht
+          man Koordinaten), beim UTM-Streifen der Rechtswert (so schreiben
+          Vermesser sie) — nur die Position tauscht. MGRS zeigt den
+          Einzelfeld-Fall.
+        </p>
+        <div id="demo-koord-mehrere">
+          <div class="form-group">
+            <label for="koord-mehrere-system">Koordinatensystem</label>
+            <select id="koord-mehrere-system"></select>
+          </div>
+          <div class="koord-gitter">
+            <div class="form-group">
+              <label for="koord-mehrere-x">Rechtswert</label>
+              <input type="text" id="koord-mehrere-x" />
+            </div>
+            <div class="form-group">
+              <label for="koord-mehrere-y">Hochwert</label>
+              <input type="text" id="koord-mehrere-y" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="koord-mehrere-einzel">MGRS</label>
+            <input type="text" id="koord-mehrere-einzel" />
+          </div>
+        </div>
+        <p class="muted" id="demo-koord-mehrere-ergebnis">
+          Noch keine Eingabe.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Koordinateneingabe — ein System</h2>
+        <p class="muted">
+          Der Tempus-Fall: nur WGS 84, keine Koordinatentransformation, also
+          keine Auswahl — ein Auswahlfeld mit einer einzigen Möglichkeit
+          wäre eine Bedienlast ohne Nutzen.
+        </p>
+        <div id="demo-koord-einzeln">
+          <div class="koord-gitter">
+            <div class="form-group">
+              <label for="koord-einzeln-x">Längengrad</label>
+              <input type="text" id="koord-einzeln-x" />
+            </div>
+            <div class="form-group">
+              <label for="koord-einzeln-y">Breitengrad</label>
+              <input type="text" id="koord-einzeln-y" />
+            </div>
+          </div>
+        </div>
+        <p class="muted" id="demo-koord-einzeln-ergebnis">
+          Noch keine Eingabe.
+        </p>
+      </section>
+
       <p class="sr-only">Dieser Satz ist nur für Screenreader da.</p>
       <p class="muted">Ende der Referenzseite.</p>
 
@@ -211,6 +269,7 @@
       // Fachlich bleibt nur die Herkunft der Vorschläge: eine feste Liste
       // ohne Netzzugriff, wie es die Referenzseite für sich verlangt.
       import { mountCombobox } from "/designsystem.js";
+      import { mountKoordinaten } from "/designsystem.js";
 
       const arten = [
         "Wiesen-Fuchsschwanz",
@@ -242,6 +301,70 @@
             eintrag.id === null
               ? `Freitext übernommen: „${eintrag.text}“`
               : `Ausgewählt: „${eintrag.text}“`;
+        },
+      });
+
+      // Fachliche Herkunft der drei Systeme bleibt hier bei der
+      // Referenzseite — das Modul kennt keine EPSG-Kennung, siehe die
+      // Grenztabelle im Auftrag.
+      const ergebnisMehrere = document.getElementById(
+        "demo-koord-mehrere-ergebnis",
+      );
+      mountKoordinaten({
+        container: document.getElementById("demo-koord-mehrere"),
+        idPrefix: "koord-mehrere",
+        systeme: [
+          {
+            id: "4326",
+            name: "WGS 84",
+            xLabel: "Längengrad (Lon)",
+            yLabel: "Breitengrad (Lat)",
+            xPlaceholder: "z. B. 13.405",
+            yPlaceholder: "z. B. 52.52",
+            yZuerst: true,
+          },
+          {
+            id: "25832",
+            name: "UTM 32N",
+            xLabel: "Rechtswert (E)",
+            yLabel: "Hochwert (N)",
+            xPlaceholder: "z. B. 389524",
+            yPlaceholder: "z. B. 5820270",
+          },
+          {
+            id: "mgrs",
+            name: "MGRS",
+            xLabel: "MGRS",
+            xPlaceholder: "z. B. 33UUU0000000000",
+            einzelfeld: true,
+          },
+        ],
+        onChange: ({ system, x, y, text }) => {
+          ergebnisMehrere.textContent = text
+            ? `System ${system}: „${text}“`
+            : `System ${system}: x=„${x}“, y=„${y}“`;
+        },
+      });
+
+      const ergebnisEinzeln = document.getElementById(
+        "demo-koord-einzeln-ergebnis",
+      );
+      mountKoordinaten({
+        container: document.getElementById("demo-koord-einzeln"),
+        idPrefix: "koord-einzeln",
+        systeme: [
+          {
+            id: "4326",
+            name: "WGS 84",
+            xLabel: "Längengrad",
+            yLabel: "Breitengrad",
+            xPlaceholder: "z. B. 13.405",
+            yPlaceholder: "z. B. 52.52",
+            yZuerst: true,
+          },
+        ],
+        onChange: ({ x, y }) => {
+          ergebnisEinzeln.textContent = `x=„${x}“, y=„${y}“`;
         },
       });
     </script>

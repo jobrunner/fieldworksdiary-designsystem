@@ -377,6 +377,17 @@ func TestIndexBindetStylesheetEinUndSchummeltNicht(t *testing.T) {
 		!strings.Contains(html, `import { mountCombobox } from '/designsystem.js'`) {
 		t.Error(`demo/index.html bindet mountCombobox nicht über einen import von "/designsystem.js" ein`)
 	}
+
+	// Dieselbe Sorge gilt für die Koordinateneingabe: ein nachgebautes
+	// mountKoordinaten in der Referenzseite würde ein kaputtes JS() ebenso
+	// lokal überdecken.
+	if strings.Contains(html, "function mountKoordinaten") {
+		t.Error("demo/index.html definiert mountKoordinaten selbst statt sie über /designsystem.js einzubinden — das würde ein kaputtes JS() lokal überdecken")
+	}
+	if !strings.Contains(html, `import { mountKoordinaten } from "/designsystem.js"`) &&
+		!strings.Contains(html, `import { mountKoordinaten } from '/designsystem.js'`) {
+		t.Error(`demo/index.html bindet mountKoordinaten nicht über einen import von "/designsystem.js" ein`)
+	}
 }
 
 // TestSprunglinkIstErstesFokussierbaresElement prüft, dass der Sprunglink
