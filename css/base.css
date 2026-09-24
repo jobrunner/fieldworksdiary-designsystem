@@ -416,7 +416,101 @@ thead th {
   border-radius: var(--radius-sm);
 }
 
+/* --- Tabellen auf schmalen Schirmen --- */
+
+/* Eine Tabelle mit mehr als drei Spalten hat auf einem Telefon keinen Platz.
+   Zwei Auswege sind üblich, beide schlecht: die Spalten schrumpfen zu lassen,
+   bis Wörter mitten durchbrechen ("Koor/dinat/e"), oder die Seite waagerecht
+   rollen zu lassen — im Gelände, mit einer Hand und Handschuhen, kaum
+   bedienbar.
+
+   .table-stack geht den dritten Weg: unterhalb von 40rem wird jede Zeile ein
+   Block und jede Zelle eine Zeile aus Beschriftung und Wert. Die
+   Beschriftung kommt aus data-label am <td>; ohne dieses Attribut bleibt die
+   Zelle einfach ohne Vorspann, die Darstellung bricht also nicht.
+
+   Die Tabelle bleibt eine Tabelle: display ändert zwar die Darstellung, aber
+   Hilfsmittel lesen weiterhin die Tabellensemantik über role, das hier
+   ausdrücklich gesetzt wird. Ohne role verliert eine Tabelle mit
+   display: block ihre Rollen — Bildschirmleser kündigen sie dann nicht mehr
+   als Tabelle an. */
+@media (max-width: 40rem) {
+  .table-stack {
+    display: block;
+  }
+
+  .table-stack thead {
+    /* Nicht display: none — das nähme die Überschriften auch den
+       Hilfsmitteln. Sie bleiben vorhanden, stehen aber außerhalb des
+       sichtbaren Bereichs; sichtbar wird ihr Text je Zelle über data-label. */
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table-stack tbody,
+  .table-stack tr,
+  .table-stack td,
+  .table-stack tbody th {
+    display: block;
+    width: auto;
+  }
+
+  .table-stack tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .table-stack tr:last-child {
+    border-bottom: 0;
+  }
+
+  /* Eine Zeilenkopfzelle (th scope="row") benennt die Zeile und steht
+     deshalb als Überschrift oben, nicht als weitere Zeile mit Vorspann. */
+  .table-stack tbody th[scope="row"] {
+    padding: 0.25rem 0;
+    font-weight: 600;
+  }
+
+  .table-stack td {
+    /* Beschriftung und Wert nebeneinander, solange beide passen; sonst
+       untereinander. Kein festes Verhältnis: ein langer Artname bekommt so
+       die ganze Breite, statt in einer halben Spalte zu brechen. */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+    padding: 0.25rem 0;
+    border-bottom: 0;
+  }
+
+  .table-stack td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    min-width: 6rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  /* Eine Zelle ohne Beschriftung — etwa die mit dem Knopf — bekommt keinen
+     leeren Vorspann und damit auch keinen Einzug. */
+  .table-stack td:not([data-label])::before {
+    content: none;
+  }
+
+  /* Bedienelemente in Zellen dürfen die Breite nutzen, statt über den Rand
+     der Karte hinauszuwachsen. */
+  .table-stack td > button,
+  .table-stack td > select,
+  .table-stack td > input {
+    max-width: 100%;
+  }
+}
+
 /* --- Größere Schirme --- */
+
 
 @media (min-width: 640px) {
   .container {
