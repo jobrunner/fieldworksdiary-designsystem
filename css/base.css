@@ -711,6 +711,20 @@ thead th {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 1rem;
+  /* Den Abstand zum nächsten Abschnitt trägt sonst der margin-bottom der
+     letzten Feldgruppe darin — der gleich unten entfällt. */
+  margin-bottom: 1rem;
+}
+
+/* Den Abstand zwischen den Feldern stellt der gap des Gitters. Behielten
+   die Feldgruppen darin zusätzlich ihren eigenen margin-bottom, addierten
+   sich beide, sobald das Gitter auf eine Spalte umbricht: Zwischen
+   Breiten- und Längengrad stünden dann 2 rem, zwischen allen anderen
+   Feldern 1 rem. Auf einem Telefon fällt das sofort auf — die beiden
+   zusammengehörigen Felder stehen weiter auseinander als die
+   unabhängigen. */
+.koord-gitter > .form-group {
+  margin-bottom: 0;
 }
 
 /* --- Symbole --- */
