@@ -143,13 +143,13 @@ export function mountCombobox({
       li.addEventListener('mousedown', (e) => {
         e.preventDefault()
         zustand.select(i)
-        uebernehmen()
+        uebernehmeEingabe()
       })
       listbox.append(li)
     })
   }
 
-  function uebernehmen() {
+  function uebernehmeEingabe() {
     const gewaehlt = zustand.pick()
     // Freitext bleibt zulässig: ohne Hervorhebung gilt beim Übernehmen der
     // eingegebene Text, mit id: null. Manche Fachbegriffe stehen in keinem
@@ -193,7 +193,7 @@ export function mountCombobox({
   function aufTastendruck(e) {
     if (e.key === 'ArrowDown') { e.preventDefault(); zustand.move(1); paint() }
     else if (e.key === 'ArrowUp') { e.preventDefault(); zustand.move(-1); paint() }
-    else if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) uebernehmen() }
+    else if (e.key === 'Enter') { e.preventDefault(); if (input.value.trim()) uebernehmeEingabe() }
     else if (e.key === 'Escape') {
       // Escape bricht auch eine laufende Anfrage ab — sonst füllt eine
       // spät eintreffende Antwort die gerade geschlossene Liste erneut.
@@ -221,6 +221,15 @@ export function mountCombobox({
   // Leben — ein zweiter mountCombobox() auf dasselbe Feld ließe dann beide
   // Instanzen gleichzeitig reagieren.
   return {
+    // Übernimmt wie die Eingabetaste: die hervorgehobene Option, sonst den
+    // eingegebenen Freitext. Nach außen gegeben, damit ein Knopf neben dem
+    // Feld denselben Weg nehmen kann — dass die Eingabetaste das tut, sieht
+    // man ihr nicht an, und ohne sichtbaren Knopf bleibt verborgen, dass
+    // auch Namen außerhalb der Vorschläge zulässig sind.
+    uebernehmen() {
+      if (input.value.trim()) uebernehmeEingabe()
+    },
+
     destroy() {
       clearTimeout(timer)
       laufend?.abort()
